@@ -1,0 +1,1 @@
+This is a file for javascript code for osmap
