@@ -9,49 +9,48 @@
  * Implements hook_schema().
  */
 function osmap_schema() {
-  $schema['osmap'] = array(
-    'description' => 'open scholar map.',
-    'fields' => array(
-      'id' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'Primary key (id of the location)',
-      ),
-      'name' => array(
-        'type' => 'varchar',
-        'length' => 60,
-        'not null' => TRUE,
-        'description' => 'Location name.',
-      ),
-      'address' => array(
-        'type' => 'varchar',
-		'length' => 80,
-        'not null' => TRUE,
-        'description' => 'Location address',
-      ),
-      'lat' => array(
-        'type' => 'float',
-		'length' => (10,6),
-        'not null' => TRUE,
-        'description' => 'Location Latitude',
-      ),
-      'lng' => array(
-        'type' => 'float',
-		'length' => (10,6),
+    $schema['osmap'] = array(
+        'description' => 'open scholar map.',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => 'Primary key (id of the location)',
+            ),
+            'name' => array(
+                'type' => 'varchar',
+                'length' => 60,
+                'not null' => TRUE,
+                'description' => 'Location name.',
+            ),
+            'address' => array(
+                'type' => 'varchar',
+                'length' => 80,
+                'not null' => TRUE,
+                'description' => 'Location address',
+            ),
+            'lat' => array(
+                'type' => 'float',
+                'length' => (10.6),
+            'not null' => TRUE,
+            'description' => 'Location Latitude',
+        ),
+        'lng' => array(
+            'type' => 'float',
+            'length' => (10.6),
         'not null' => TRUE,
         'description' => "Location Longitude",
-      ),
+    ),
       'type' => array(
         'type' => 'varchar',
-		'length' => 30,
+        'length' => 30,
         'not null' => TRUE,
         'description' => 'Location type, for eg restaurant/bar/business/university',
-      ),
     ),
-    'primary key' => array('id'),
     ),
-  );
+        'primary key' => array('id'),'indexes' => array('id'),
+    );
 
   return $schema;
 }
@@ -60,21 +59,21 @@ function osmap_schema() {
  * Implements hook_install().
  */
 function osmap_install() {
-  // Insert a default location on the map.
-  db_insert('osmap')
-    ->fields(array(
-      'name' => 'Harvard Web Publishing',
-	  'address' => '125 Mount Auburn Street, Cambridge, MA',
-	  'lat' => 42.373573,
-	  'lng' => -71.122886,
-	  'type' => 'university',      
-    ))
-    ->execute();
+    // Insert a default location on the map.
+    db_insert('osmap')
+        ->fields(array(
+            'name' => 'Harvard Web Publishing',
+            'address' => '125 Mount Auburn Street, Cambridge, MA',
+            'lat' => 42.373573,
+            'lng' => -71.122886,
+            'type' => 'university',
+        ))
+        ->execute();
 }
 
 /**
  * Implements hook_uninstall().
  */
 function _uninstall() {
-  variable_del('osmap_default_status');
- }
+    variable_del('osmap_default_status');
+}
