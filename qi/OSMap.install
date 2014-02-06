@@ -1,0 +1,133 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: King
+ * Date: 14-2-4
+ * Time: 下午12:46
+ */ 
+ 
+ /**
+  * Implements hook_schema()
+  *
+  * Defines the database tables used in this module
+  * 
+  */
+  function OSMap_schema() {
+    
+	$schema['OSMap'] = array (
+		'description' => 'Stores the map location entries.',
+		// the fields in the table
+		'fields' => array(
+			'nid' => array(
+				'description' => 'The primary identifier of a map location entry.',
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+			),
+			'title' => array(
+				'description' => 'The title of a map location entry.',
+				'type' => 'varchar',
+				'length' => 30,
+				'not null' => TRUE,
+				'default' => ' ',
+			),
+			'street' => array(
+				'description' => 'The street and house number of a map location entry.',
+				'type' => 'varchar',
+				'length' => 80,
+				'not null' => TRUE,
+				'default' => ' ',
+			),
+			'city' => array(
+				'description' => 'The city of a map location entry.',
+				'type' => 'varchar',
+				'length' => 30,
+				'not null' => TRUE,
+				'default' => ' ',
+			),
+			'state' => array(
+				'description' => 'The city of a map location entry.',
+				'type' => 'varchar',
+				'length' => 30,
+				'not null' => TRUE,
+				'default' => ' ',
+			),
+			'postal_code' => array(
+				'description' => 'The zip code of a map location entry.',
+				'type' => 'int',
+				'length' => 10,
+				'not null' => TRUE,
+				'default' => 00000,
+			),
+		),
+		
+		'primary key' => array('nid'),
+	);
+	return $schema;
+  }
+  
+ /**
+  * Implements hook_install()
+  *
+  * Create a default entry in the database
+  */
+  function OSMap_install() {
+  
+    // add a default entry
+	$fields = array(
+		'title' => 'Harvard Web Publishing',
+		'street' => '125 Mount Auburn Street',
+		'city' => 'Cambridge',
+		'state' => 'MA',
+		'postal' => 02138,
+	);
+	
+	db_insert('OSMap')
+		->fields($fields)
+		->execute();
+  }
+  
+ /**
+  * Implements hook_uninstall()
+  * 
+  * 
+  */
+  function OSMap_uninstall() {
+    
+	// nothing.
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
