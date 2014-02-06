@@ -14,16 +14,18 @@
 	  var xmlFile = "phpsqlajax_genxml3.php";
 	  var zoom = 13;
 	  var animation = google.maps.Animation.DROP;
-      var map = new google.maps.Map(document.getElementById("map"), {
-           center: center,
-           zoom: zoom;
-           mapTypeId: mapTypeId
-	   });
-	  var infoWindow = new google.maps.InfoWindow({
-	       map: map,
-		   position: center,
-		
+	  
+          var map = new google.maps.Map(document.getElementById("map"), {
+              center: center,
+              zoom: zoom;
+              mapTypeId: mapTypeId
 	    });
+	   
+          var infoWindow = new google.maps.InfoWindow({
+	       map: map,
+	       position: center,
+	    });
+	    
 	  function toggleBounce() {
             if (marker.getAnimation() != null) {
 				marker.setAnimation(null);
@@ -44,10 +46,10 @@
                     var icon = customIcons[type] || {};
 		            var title = markers[i].getAttribute("title");
                     var marker = new google.maps.Marker({
-											map: map,
-											position: point,
-											icon: icon.icon,
-			                                animation: animation,
+				map: map,
+				position: point,
+	 			icon: icon.icon,
+		                animation: animation,
                      });
                     bindInfoWindow(marker, map, infoWindow, title, html);
                 }
