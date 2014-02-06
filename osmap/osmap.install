@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_schema().
+ * Implements hook_schema(). create the osmap table in drupal7 database
  */
 function osmap_schema() {
     $schema['osmap'] = array(
@@ -56,7 +56,7 @@ function osmap_schema() {
 }
 
 /**
- * Implements hook_install().
+ * Implements hook_install(). Adds a default site to the map: HWP
  */
 function osmap_install() {
     // Insert a default location on the map.
@@ -72,7 +72,7 @@ function osmap_install() {
 }
 
 /**
- * Implements hook_uninstall().
+ * Implements hook_uninstall(). If osmap is uninstalled, then remove the default
  */
 function _uninstall() {
     variable_del('osmap_default_status');
