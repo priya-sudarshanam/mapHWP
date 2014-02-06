@@ -1,5 +1,4 @@
 //This is a file for xml related code for osmap.inc
-//This is a file for xml related code for osmap.inc
 
 <?php
 /**
