@@ -75,6 +75,8 @@ while ($row = @mysql_fetch_assoc($result)){
     $newnode->setAttribute("type", $row['type']);
 }
 
+drupal_add_js(drupal_get_path('module', 'osmap') . '/includes/os_infinite_scroll.js');
+
 echo $dom->saveXML();
 
 ?>
