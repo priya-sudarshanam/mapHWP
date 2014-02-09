@@ -1,31 +1,74 @@
-<?php
+<?php require_once('osmap.inc'); 
+
 /**
  * @file
  * osmap module implementing simple hook_menu
  */
+  
+//osmap_entry_load loads the data from the osmap table
+
+
 /**
  * Implements hook_menu().
  *
  * Set up calls to drupal_get_form() for all our example cases.
  */
 /**function dbtng_example_menu() {*/
-function osmap_menu(){
+/* function osmap_menu(){
+ 
+  $items['osmap'] = array(
+    'title' => 'OSMap_ XML',
+    'page callback' => 'osmap_create_xml',
+    'access arguments' => array('osmap_example'),
+   );
+   $items['osmap/mymap'] = array(
+   'title' => 'OSMap_map',
+   'page callback' => 'osmap_show_map',
+   'access callback' =>TRUE,
+   ); 
+    
+  return $items;
+} */
 
+function osmap_menu() {
   $items = array();
 
-  $items['example/osmap'] = array(
-    'title' => 'OSMAP Example',
-    'page callback' => 'osmap_example',
+  $items['osmap'] = array(
+    'title' => 'OSMAP XML',
+    'page callback' => 'osmap_create_xml',
+	'access arguments' => array('osmap_example'),
     'access callback' => TRUE,
   );
-  
+  $items['osmap/list'] = array(
+    'title' => 'XML',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['osmap/add'] = array(
+    'title' => 'Add entry',
+    'page callback' => 'osmap_show_map',
+    'page arguments' => array('osmap_showmap'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -9,
+  );
   return $items;
 }
-
-/**
- * Render a list of entries in the database.
- */
-function osmap_example() {
-  return '<div id="map" style="width: 500px; height: 300px"></div>';
+function osmap_create_xml(){
+    echo create_xml(); 
+   }
+  
+function osmap_show_map(){
+  $page_contents = t('These are the contents of my page');
+  $page_array = array(
+    '#markup' => $page_contents,
+    '#attached' => array(
+      'js' => array(
+          'type' => 'file',
+          'data' => drupal_get_path('module', 'osmap') . 'osmap.js',
+	  ),
+    ),
+  );
+  // return the render array with the attached JS
+  return $page_array;
 }
-
