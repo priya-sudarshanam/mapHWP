@@ -33,19 +33,19 @@ function osmap_schema() {
             'lat' => array(
                 'type' => 'float',
                 'length' => (10.6),
-            'not null' => TRUE,
-            'description' => 'Location Latitude',
-        ),
-        'lng' => array(
-            'type' => 'float',
-            'length' => (10.6),
-        'not null' => TRUE,
-        'description' => "Location Longitude",
-    ),
-      'type' => array(
-        'type' => 'varchar',
-        'length' => 30,
-        'not null' => TRUE,
+                'not null' => TRUE,
+                'description' => 'Location Latitude',
+            ),
+            'lng' => array(
+                'type' => 'float',
+                'length' => (10.6),
+                'not null' => TRUE,
+                'description' => "Location Longitude",
+             ),
+            'type' => array(
+                'type' => 'varchar',
+                'length' => 30,
+                'not null' => TRUE,
         'description' => 'Location type, for eg restaurant/bar/business/university',
     ),
     ),
@@ -72,8 +72,12 @@ function osmap_install() {
 }
 
 /**
- * Implements hook_uninstall(). If osmap is uninstalled, then remove the default
+ * Implements hook_uninstall().
+ *
+ * As in hook_install, there is no need to uninstall schema, Drupal will do it
+ * for us.
+ *
  */
-function _uninstall() {
-    variable_del('osmap_default_status');
+function osmap_uninstall() {
+    // nothing 
 }
