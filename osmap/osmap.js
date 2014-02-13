@@ -1,42 +1,39 @@
-//This is a file for javascript code for osmap
+<!DOCTYPE html >
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <title>PHP/MySQL & Google Maps Example</title>
     <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript">
- 
-     var customIcons = {
-	    university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
+    //<![CDATA[
+
+    var customIcons = {
+      university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
         business: {icon: 'http://labs.google.com/ridefinder/images/mm_20_orange.png'},
-        office: {icon: 'http://labs.google.com/ridefinder/images/mm_20_blue.png'},	  
-       };
+        office: {icon: 'http://labs.google.com/ridefinder/images/mm_20_blue.png'},	
+    };
 
     function load() {
-	  var center = new google.maps.LatLng(42.373573, -71.122886);
+	  var mLat = 42.373573;
+	  var mLng = -71.122887;
+	  var center = new google.maps.LatLng(mLat, mLng);
 	  var mapTypeId = 'roadmap';
-	  var xmlFile = "phpsqlajax_genxml3.php";
-	  var zoom = 13;
+	  var mId="map";
 	  var animation = google.maps.Animation.DROP;
+	  var mZoom = 13;
 	  
-          var map = new google.maps.Map(document.getElementById("map"), {
-              center: center,
-              zoom: zoom;
-              mapTypeId: mapTypeId
-	    });
-	   
-          var infoWindow = new google.maps.InfoWindow({
+      var map = new google.maps.Map(document.getElementById(mId), {
+        center: center,
+        zoom: mZoom,
+        mapTypeId: mapTypeId,
+      });
+      var infoWindow = new google.maps.InfoWindow({
 	       map: map,
-	       position: center,
+		   position: center,		
 	    });
-	    
-	  function toggleBounce() {
-            if (marker.getAnimation() != null) {
-				marker.setAnimation(null);
-				} else {
-				marker.setAnimation(google.maps.Animation.BOUNCE);
-				}
-			}
-
-       downloadUrl(xmlFile, function(data) {
-            var xml = data.responseXML;
-            var markers = xml.documentElement.getElementsByTagName("marker");
+      downloadUrl("osmap.xml", function(data) {
+        var xml = data.responseXML;
+        var markers = xml.documentElement.getElementsByTagName("marker");
                 for (var i = 0; i < markers.length; i++) {
                     var name = markers[i].getAttribute("name");
                     var address = markers[i].getAttribute("address");
@@ -46,16 +43,15 @@
                     var icon = customIcons[type] || {};
 		            var title = markers[i].getAttribute("title");
                     var marker = new google.maps.Marker({
-				map: map,
-				position: point,
-	 			icon: icon.icon,
-		                animation: animation,
+											map: map,
+											position: point,
+											icon: icon.icon,
+											animation: animation		                               
                      });
-                    bindInfoWindow(marker, map, infoWindow, title, html);
-                }
-        });
+                    bindInfoWindow(marker, map, infoWindow,title,html);
+					}
+      });
     }
-
     function bindInfoWindow(marker, map, infoWindow, title, html) {
 		google.maps.event.addListener(marker, 'click', function() {
 			infoWindow.setContent(html);
@@ -71,20 +67,23 @@
     }
 
     function downloadUrl(url, callback) {
-      var request = window.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') : new XMLHttpRequest;
+      var request = window.ActiveXObject ?
+          new ActiveXObject('Microsoft.XMLHTTP') :
+          new XMLHttpRequest;
 
-          request.onreadystatechange = function() {
-          if (request.readyState == 4) {
-             request.onreadystatechange = {};
-             callback(request, request.status);
-            }
-          };
-
-          request.open('GET', url, true);
-          request.send(null);
+      request.onreadystatechange = function() {
+        if (request.readyState == 4) {
+          request.onreadystatechange = {};
+          callback(request, request.status);
+        }
+      };
+      request.open('GET', url, true);
+      request.send(null);
     }
-    google.maps.event.addDomListener(window, 'load', load);
- 
   </script>
+  </head>
+  <body onload="load()">
+    <div id="map" style="width: 500px; height: 300px"></div>
+  </body>
 
-  
+</html>
