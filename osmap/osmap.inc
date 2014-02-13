@@ -1,9 +1,13 @@
 <?php
 drupal_add_http_header('Content-Type', 'application/xml; charset=utf-8');
 function create_xml(){
-    $xml = new DOMDocument('1.0');
-    $element = $xml->createElement('markers');
-    $parnode = $xml->appendChild($element);
+    $myfile = 'myxml.xml';
+    $myfile = realpath($myfile);
+
+    $dom = new DOMDocument('1.0','utf-8');
+//	$dom->load($myfile);
+    $element = $dom->createElement('markers');
+    $parnode = $dom->appendChild($element);
 	$table = 'osmap';
 	$osmap_true = 1;
     
@@ -15,7 +19,7 @@ function create_xml(){
      }     
 // Iterate through the rows, adding XML nodes for each
      while ($row=$result->fetchAssoc()){
-        $element = $xml->createElement('marker');
+        $element = $dom->createElement('marker');
          $newnode = $parnode->appendChild($element);
 	     $newnode->setAttribute('name',$row['name']);
          $newnode->setAttribute('address', $row['address']);
@@ -23,5 +27,11 @@ function create_xml(){
          $newnode->setAttribute('lng', $row['lng']);
          $newnode->setAttribute('type', $row['type']);
 	    }
-	return $xml->saveXML();
+		
+	$dom->formatOutput = true;
+	
+	$strxml = $dom->saveXML();
+	$dom->save('osmap.xml');
+		
+    return $strxml;
 	}
