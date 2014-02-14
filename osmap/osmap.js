@@ -5,8 +5,8 @@
     <title>PHP/MySQL & Google Maps Example</title>
     <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript">
-    //<![CDATA[
-
+  
+    // declare icons for various types like university/business etc
     var customIcons = {
       university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
         business: {icon: 'http://labs.google.com/ridefinder/images/mm_20_orange.png'},
@@ -14,6 +14,7 @@
     };
 
     function load() {
+	  // declare variables 
 	  var mLat = 42.373573;
 	  var mLng = -71.122887;
 	  var center = new google.maps.LatLng(mLat, mLng);
@@ -21,16 +22,18 @@
 	  var mId="map";
 	  var animation = google.maps.Animation.DROP;
 	  var mZoom = 13;
-	  
+	  // create new map with center at a particular latitude and longitude, zoom and maptype
       var map = new google.maps.Map(document.getElementById(mId), {
         center: center,
         zoom: mZoom,
         mapTypeId: mapTypeId,
       });
+	   // create new infoWindow which opens up on hover and on click
       var infoWindow = new google.maps.InfoWindow({
 	       map: map,
 		   position: center,		
 	    });
+	  // extract the data from the xml and put it on the map
       downloadUrl("osmap.xml", function(data) {
         var xml = data.responseXML;
         var markers = xml.documentElement.getElementsByTagName("marker");
@@ -52,6 +55,7 @@
 					}
       });
     }
+	// open the infoWindow on mouseover, mouseclick and mouseout
     function bindInfoWindow(marker, map, infoWindow, title, html) {
 		google.maps.event.addListener(marker, 'click', function() {
 			infoWindow.setContent(html);
