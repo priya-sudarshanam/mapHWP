@@ -6,7 +6,18 @@
  */
   
 //osmap_entry_load loads the data from the osmap table
+ function osmap_load($entry = array()) {
+  // Read all fields from the osmap table.
+  $select = db_select('osmap', 'os');
+  $select->fields('os');
 
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
 
 /**
  * Implements hook_menu().
@@ -18,36 +29,64 @@ function osmap_menu() {
   $items = array();
 
   $items['osmap'] = array(
-    'title' => 'OSMAP XML',
+    'title' => 'OSMAP',
     'page callback' => 'osmap_create_xml',
 	'access arguments' => array('osmap_example'),
     'access callback' => TRUE,
   );
-  $items['osmap/list'] = array(
+  $items['osmap/xml'] = array(
     'title' => 'XML',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
   $items['osmap/map'] = array(
     'title' => 'Display Map',
-    'page callback' => 'osmap_show_map',
-    'page arguments' => array('osmap_showmap'),
+    'page callback' => 'osmap_map',
     'access callback' => TRUE,
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -9,
-
+	'type' => MENU_LOCAL_TASK,
+    'weight' => -9,	
  );
+ $items['osmap/table'] = array(
+    'title' => 'List',
+	'page callback' => 'osmap_map_table',
+    'access callback' => TRUE,
+	'type' => MENU_LOCAL_TASK,
+    'weight' => -8,
+  );
   return $items;
 }
 function osmap_create_xml(){
     require_once('osmap.inc');
+	$page_contents = t('XML');
 	$map_XML = create_xml();
     echo $map_XML; 
    }
-  
- function osmap_show_map(){
-   require_once('osmap.xml');
-    $map_points = ' <!DOCTYPE html >
+ function osmap_map_table() {
+    $output = '';
+
+  // Get all entries in the dbtng_example table.
+  if ($entries = osmap_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id'), t('name'), t('address'), t('lat'), t('lng'), t('type'), t('title'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+ 
+ // create and put the map 
+function osmap_map()
+ {
+   $page_contents = t('MAP');
+   
+   $osmap_map = '<!DOCTYPE html >
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
@@ -63,21 +102,23 @@ function osmap_create_xml(){
     };
 
     function load() {
-	  var center = new google.maps.LatLng(42.373573, -71.122887);
+	  var mLat = 42.373573;
+	  var mLng = -71.122887;
+	  var center = new google.maps.LatLng(mLat, mLng);
 	  var mapTypeId = \'roadmap\';
+	  var mId="map";
 	  var animation = google.maps.Animation.DROP;
-      var map = new google.maps.Map(document.getElementById("map"), {
+	  var mZoom = 13;
+	  
+      var map = new google.maps.Map(document.getElementById(mId), {
         center: center,
-        zoom: 13,
+        zoom: mZoom,
         mapTypeId: mapTypeId,
       });
       var infoWindow = new google.maps.InfoWindow({
 	       map: map,
-		   position: center,
-		
+		   position: center,		
 	    });
-
-      // Change this depending on the name of your PHP file
       downloadUrl("osmap.xml", function(data) {
         var xml = data.responseXML;
         var markers = xml.documentElement.getElementsByTagName("marker");
@@ -93,27 +134,22 @@ function osmap_create_xml(){
 											map: map,
 											position: point,
 											icon: icon.icon,
-											animation: animation
-			                               
+											animation: animation		                               
                      });
-                    bindInfoWindow(marker, map, infoWindow,title,html);
-        }
+                    bindInfoWindow(marker, map, infoWindow,type,html);
+					}
       });
     }
-
-    function bindInfoWindow(marker, map, infoWindow, title, html) {
+    function bindInfoWindow(marker, map, infoWindow, type, html) {
 		google.maps.event.addListener(marker, \'click\', function() {
 			infoWindow.setContent(html);
 			infoWindow.open(map, marker);
         });
 	    google.maps.event.addListener(marker, \'mouseover\', function() {
-			infoWindow.setContent(title);
+			infoWindow.setContent(type);
 			infoWindow.open(map, marker);
         });
-	    google.maps.event.addListener(marker, \'mouseout\', function() {
-			infoWindow.close();
-        });
-    }
+	   }
 
     function downloadUrl(url, callback) {
       var request = window.ActiveXObject ?
@@ -126,18 +162,16 @@ function osmap_create_xml(){
           callback(request, request.status);
         }
       };
-
       request.open(\'GET\', url, true);
       request.send(null);
     }
   </script>
-
   </head>
-
   <body onload="load()">
     <div id="map" style="width: 500px; height: 300px"></div>
   </body>
 
 </html>';
-  echo $map_points;
+return $osmap_map;
 }
+ 
