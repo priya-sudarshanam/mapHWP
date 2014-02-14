@@ -12,46 +12,53 @@ function osmap_schema() {
     $schema['osmap'] = array(
         'description' => 'open scholar map.',
         'fields' => array(
+		    // add field id
             'id' => array(
+			    //'serial' for auto-increment
                 'type' => 'serial',
                 'unsigned' => TRUE,
                 'not null' => TRUE,
                 'description' => 'Primary key (id of the location)',
             ),
+			// add field name
             'name' => array(
                 'type' => 'varchar',
                 'length' => 60,
                 'not null' => TRUE,
                 'description' => 'Location name.',
             ),
+			// add field address
             'address' => array(
                 'type' => 'varchar',
                 'length' => 80,
                 'not null' => TRUE,
                 'description' => 'Location address',
             ),
+			// add field latitude
             'lat' => array(
                 'type' => 'float',
                 'length' => (10.6),
                 'not null' => TRUE,
                 'description' => 'Location Latitude',
             ),
+			// add field longitude
             'lng' => array(
                 'type' => 'float',
                 'length' => (10.6),
                 'not null' => TRUE,
                 'description' => "Location Longitude",
              ),
-            'type' => array(
+			// add field type to separate out types like business/university
+             'type' => array(
                 'type' => 'varchar',
                 'length' => 30,
                 'not null' => TRUE,
-        'description' => 'Location type, for eg restaurant/bar/business/university',
+        'description' => 'Location type, for eg business/university',
     ),
-    ),
+    ),  // declare the primary key and created the index on the same
         'primary key' => array('id'),'indexes' => array('id'),
     );
-
+   //create the schema in the database
   return $schema;
 }
 
