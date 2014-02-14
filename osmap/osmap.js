@@ -1,11 +1,3 @@
-<!DOCTYPE html >
-  <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-    <title>PHP/MySQL & Google Maps Example</title>
-    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-    <script type="text/javascript">
-  
     // declare icons for various types like university/business etc
     var customIcons = {
       university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
@@ -84,10 +76,4 @@
       request.open('GET', url, true);
       request.send(null);
     }
-  </script>
-  </head>
-  <body onload="load()">
-    <div id="map" style="width: 500px; height: 300px"></div>
-  </body>
-
-</html>
+  
