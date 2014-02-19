@@ -1,0 +1,166 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: King
+ * Date: 14-2-4
+ * Time: 下午12:38
+ */
+
+/**
+ * Implementation of hook_menu
+ */
+function OSMap_menu(){
+
+    $items = array();
+    $items['OSMap'] = array(
+        'title' => 'OSMap',
+        'description' => 'A map module for OpenScholar',
+        'page callback' => 'OSMap_list', // call the page
+        'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
+    );
+	
+	$items['OSMap/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+	
+	$items['OSMap/add'] = array(
+    'title' => 'Add entry',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('OSMap_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -9,
+  );
+    return $items;
+}
+
+/**
+ * Implementation of the output function
+ */
+function OSMap_page() {
+
+    return 'This is a hello world test of OSMap';
+}
+
+// load all the entries from the database
+function OSMap_list() {
+  $output = '';
+
+  // Get all entries in the dbtng_example table.
+  if ($entries = OSMap_entry_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id'), t('title'), t('street'), t('city'), t('state'), t('postal_code'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+// load all of the address entries from the database
+function OSMap_entry_load() {
+  // Read all fields from the dbtng_example table.
+  $select = db_select('OSMap', 'example');
+  $select->fields('example');
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+// add a new entry
+function OSMap_form_add($form, &$form_state) {
+  $form = array();
+
+  $form['add'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Add a address entry'),
+  );
+  $form['add']['title'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Title'),
+    '#size'  => 30,
+  );
+  $form['add']['street'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Street'),
+    '#size'  => 30,
+  );
+  $form['add']['city'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('City'),
+    '#size'  => 30,
+  );
+  $form['add']['street'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Street'),
+    '#size'  => 30,
+  );
+  $form['add']['state'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('State'),
+    '#size'  => 30,
+  );
+  $form['add']['postal_code'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Postal Code'),
+    '#size'  => 30,
+  );
+  $form['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+
+function OSMap_form_add_submit($form, &$form_state) {
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'title'    => $form_state['values']['title'],
+    'street'   => $form_state['values']['street'],
+    'city'     => $form_state['values']['city'],
+	'state'    => $form_state['values']['state'],
+    'postal_code'    => $form_state['values']['postal_code'],
+  );
+  $return = OSMap_entry_insert($entry);
+  if ($return) {
+    drupal_set_message(t("Created entry @entry", array('@entry' => print_r($entry, TRUE))));
+  }
+}
+
+function OSMap_entry_insert($entry) {
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('OSMap')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
+}
+
+
+
+
+
+
+
+
+

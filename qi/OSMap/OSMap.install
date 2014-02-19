@@ -6,6 +6,38 @@
  * Time: 下午12:46
  */ 
  
+ 
+  /**
+  * Implements hook_install()
+  *
+  * Create a default entry in the database
+  */
+  function OSMap_install() {
+  
+    // add a default entry
+	$fields = array(
+		'title' => 'Harvard Web Publishing',
+		'street' => '125 Mount Auburn Street',
+		'city' => 'Cambridge',
+		'state' => 'MA',
+		'postal' => 02138,
+	);
+	
+	db_insert('OSMap')
+		->fields($fields)
+		->execute();
+  }
+  
+ /**
+  * Implements hook_uninstall()
+  * 
+  * 
+  */
+  function OSMap_uninstall() {
+    
+	// nothing.
+  }
+  
  /**
   * Implements hook_schema()
   *
@@ -66,36 +98,8 @@
 	return $schema;
   }
   
- /**
-  * Implements hook_install()
-  *
-  * Create a default entry in the database
-  */
-  function OSMap_install() {
-  
-    // add a default entry
-	$fields = array(
-		'title' => 'Harvard Web Publishing',
-		'street' => '125 Mount Auburn Street',
-		'city' => 'Cambridge',
-		'state' => 'MA',
-		'postal' => 02138,
-	);
-	
-	db_insert('OSMap')
-		->fields($fields)
-		->execute();
-  }
-  
- /**
-  * Implements hook_uninstall()
-  * 
-  * 
-  */
-  function OSMap_uninstall() {
-    
-	// nothing.
-  }
+
+
   
   
   
