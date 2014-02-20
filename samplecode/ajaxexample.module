@@ -1,0 +1,51 @@
+<?php  
+
+/**
+ * @file
+ * osmap module implementing simple hook_menu
+ */
+  
+function ajaxexample_menu() {
+  $items = array();
+
+  $items['ajaxexample'] = array(
+    'title' => 'Ajax Example',
+	'page callback' => 'ajaxexample_hello',
+   	'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'),
+  );
+  $items['ajaxexample/%'] = array(
+   'title' => 'Ajax example callback',
+   	'type' => MENU_NORMAL_ITEM,
+   'page callback' =>'ajaxexample_link_callback',
+   'access arguments' => array('access content'),
+  );
+  return $items;
+  }
+ 
+function ajaxexample_hello()
+ {
+   return array(
+    '#type' => 'link',
+	'#title' => t('Ajax Example Link'),
+	'#href' => 'ajaxexample/%',
+	'#prefix' =>'<div id="ajax-example-link">',
+	'#suffix' =>'</div><div id="ajax-display">Hello</div>',	 
+   ); 
+           
+ }
+ function ajaxexample_link_callback(){
+  $path = drupal_get_path('module', 'ajaxexample');
+  $file = "{$path}/ajaxexample.js";
+  $build = array(
+    '#markup' => "<div>This is ajax callback testing</div>",
+	'#attached' => array(
+	  'js' => array(
+	    0 => $file,
+	  ),
+	),
+  );
+  
+  
+   return $build;
+ }
