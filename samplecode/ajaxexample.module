@@ -14,38 +14,25 @@ function ajaxexample_menu() {
    	'type' => MENU_NORMAL_ITEM,
     'access arguments' => array('access content'),
   );
-  $items['ajaxexample/%'] = array(
-   'title' => 'Ajax example callback',
-   	'type' => MENU_NORMAL_ITEM,
-   'page callback' =>'ajaxexample_link_callback',
-   'access arguments' => array('access content'),
-  );
   return $items;
   }
  
 function ajaxexample_hello()
  {
-   return array(
-    '#type' => 'link',
-	'#title' => t('Ajax Example Link'),
-	'#href' => 'ajaxexample/%',
-	'#prefix' =>'<div id="ajax-example-link">',
-	'#suffix' =>'</div><div id="ajax-display">Hello</div>',	 
-   ); 
-           
- }
- function ajaxexample_link_callback(){
-  $path = drupal_get_path('module', 'ajaxexample');
-  $file = "{$path}/ajaxexample.js";
-  $build = array(
-    '#markup' => "<div>This is ajax callback testing</div>",
-	'#attached' => array(
-	  'js' => array(
-	    0 => $file,
-	  ),
-	),
-  );
-  
-  
+   $build = array(
+   '#markup' => '<button id="ajax-example-link">Click Me</button><div id="ajax-display">hello</div>',
+   '#attached' => array(
+       'js' => array(
+	      0 => drupal_get_path('module', 'ajaxexample').'/ajaxexample.js',
+	   ),
+     ),
+   );
    return $build;
  }
+ 
+/*  function ajaxexample_init() {
+ // drupal_add_js(drupal_get_path('module', 'ajaxexample').'/ajaxexample.js');
+   // drupal_add_js('http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js', 'external');
+} */
+
+ 
