@@ -1,0 +1,44 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: King
+ * Date: 14-2-4
+ * Time: 下午12:38
+ */
+
+/**
+ * Implementation of hook_menu
+ */
+function changeme_menu(){
+
+	
+    $items = array();
+    $items['changeme'] = array(
+        'title' => 'changeme',
+        'description' => 'A simple module changes the html context using JavaScript',
+        'page callback' => 'changeme_switch', // call the page
+        'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
+    );
+		
+    return $items;
+}
+
+function changeme_switch(){
+
+	drupal_add_js('sites/all/modules/changeme/source.js', file);
+	return '<div id="change_me">
+				<a href=# onclick="changeMe()">Change Me</a>
+				<p id="content">Hello World</p>
+			</div>';
+}
+
+
+
+
+
+
+
+
+
+
+
