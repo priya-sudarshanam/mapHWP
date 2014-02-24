@@ -17,6 +17,7 @@ function changeme_menu(){
         'title' => 'changeme',
         'description' => 'A simple module changes the html context using JavaScript',
         'page callback' => 'changeme_switch', // call the page
+		'type' => MENU_NORMAL_ITEM,
         'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
     );
 		
@@ -25,11 +26,12 @@ function changeme_menu(){
 
 function changeme_switch(){
 
-	drupal_add_js('sites/all/modules/changeme/source.js', file);
+	drupal_add_js('sites/all/modules/changeme/source.js');
 	return '<div id="change_me">
 				<a href=# onclick="changeMe()">Change Me</a>
-				<p id="content">Hello World</p>
+				<p id="hello">Hello World</p>
 			</div>';
+			
 }
 
 
