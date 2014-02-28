@@ -15,14 +15,24 @@ function OSMap_menu(){
     $items['OSMap'] = array(
         'title' => 'OSMap',
         'description' => 'A map module for OpenScholar',
-        'page callback' => 'OSMap_list', // call the page
+        'page callback' => 'OSMap_map_show', // call the page
         'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
     );
 	
-	$items['OSMap/list'] = array(
-    'title' => 'List',
+	$items['OSMap/map'] = array(
+    'title' => 'map',
+    'page callback' => 'OSMap_map_show',
+    'access callback' => TRUE,
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
+  );
+  
+	$items['OSMap/list'] = array(
+    'title' => 'List',
+	'page callback' => 'OSMap_list',
+	'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -9,
   );
 	
 	$items['OSMap/add'] = array(
@@ -31,8 +41,10 @@ function OSMap_menu(){
     'page arguments' => array('OSMap_form_add'),
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
-    'weight' => -9,
+    'weight' => -8,
   );
+ 
+  
     return $items;
 }
 
@@ -48,15 +60,16 @@ function OSMap_page() {
 function OSMap_list() {
   $output = '';
 
-  // Get all entries in the dbtng_example table.
+  // Get all entries in the table.
   if ($entries = OSMap_entry_load()) {
     $rows = array();
+	$entry = t('');
     foreach ($entries as $entry) {
       // Sanitize the data before handing it off to the theme layer.
       $rows[] = array_map('check_plain', (array) $entry);
     }
     // Make a table for them.
-    $header = array(t('Id'), t('title'), t('street'), t('city'), t('state'), t('postal_code'));
+    $header = array(t('Id'), t('title'), t('street'), t('city'), t('state'), t('postal_code'), t('lat'), t('lng'));
     $output .= theme('table', array('header' => $header, 'rows' => $rows));
   }
   else {
@@ -70,7 +83,8 @@ function OSMap_entry_load() {
   // Read all fields from the dbtng_example table.
   $select = db_select('OSMap', 'example');
   $select->fields('example');
-
+  $entry = t('');
+  
   // Add each field and value as a condition to this query.
   foreach ($entry as $field => $value) {
     $select->condition($field, $value);
@@ -117,6 +131,16 @@ function OSMap_form_add($form, &$form_state) {
     '#title' => t('Postal Code'),
     '#size'  => 30,
   );
+  $form['add']['lat'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('lat'),
+    '#size'  => 30,
+  );
+  $form['add']['lng'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('lng'),
+    '#size'  => 30,
+  );
   $form['add']['submit'] = array(
     '#type'  => 'submit',
     '#value' => t('Add'),
@@ -135,6 +159,8 @@ function OSMap_form_add_submit($form, &$form_state) {
     'city'     => $form_state['values']['city'],
 	'state'    => $form_state['values']['state'],
     'postal_code'    => $form_state['values']['postal_code'],
+	'lat'      => $form_state['values']['lat'],
+	'lng'      => $form_state['values']['lng'],
   );
   $return = OSMap_entry_insert($entry);
   if ($return) {
@@ -154,6 +180,40 @@ function OSMap_entry_insert($entry) {
       array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
   }
   return $return_value;
+}
+
+function OSMap_map_show(){
+
+	drupal_add_js('https://maps.googleapis.com/maps/api/js?key=AIzaSyAz4kiKnyoMKp0e8ORuqbWNZZpplrxGsGE&sensor=true', 'external');
+	drupal_add_js('sites/all/modules/OSMap/source.js');
+	
+	if ($entries = OSMap_entry_load()) {
+    
+		$rows = array();
+		$makers = array();
+		$entry = t('');
+		
+		foreach ($entries as $entry) {
+			$rows[] = array_map('check_plain', (array) $entry);
+		}
+		
+		foreach ($rows as $row) {
+			$makers[] = array_map ('check_plain', array(	
+				'lat' => $row['lat'],
+				'lng' => $row['lng'],
+			));
+		}	
+	}
+	else {
+		drupal_set_message(t('No entries have been added yet.'));
+	}
+	
+	// add parameters
+	
+	drupal_add_js(array ("OSMap" => $makers), 'setting');
+	
+	return '<div id="googleMap" style="width:500px;height:380px;"></div>';
+			
 }
 
 
