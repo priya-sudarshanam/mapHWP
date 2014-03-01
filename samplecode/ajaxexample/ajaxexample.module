@@ -1,0 +1,38 @@
+<?php  
+
+/**
+ * @file
+ * osmap module implementing simple hook_menu
+ */
+  
+function ajaxexample_menu() {
+  $items = array();
+
+  $items['ajaxexample'] = array(
+    'title' => 'Ajax Example',
+	'page callback' => 'ajaxexample_hello',
+   	'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'),
+  );
+  return $items;
+  }
+ 
+function ajaxexample_hello()
+ {
+   $build = array(
+   '#markup' => '<button id="ajax-example-link">Click Me</button><div id="ajax-display">hello</div>',
+   '#attached' => array(
+       'js' => array(
+	      0 => drupal_get_path('module', 'ajaxexample').'/ajaxexample.js',
+	   ),
+     ),
+   );
+   return $build;
+ }
+ 
+/*  function ajaxexample_init() {
+ // drupal_add_js(drupal_get_path('module', 'ajaxexample').'/ajaxexample.js');
+   // drupal_add_js('http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js', 'external');
+} */
+
+ 
