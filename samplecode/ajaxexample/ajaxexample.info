@@ -1,0 +1,4 @@
+name = AJAX Example
+description = An ajax callback example.
+project = Custom
+core = 7.x
