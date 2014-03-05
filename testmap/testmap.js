@@ -41,18 +41,18 @@
 											icon: icon.icon,
 											animation: animation		                               
                         });
-                      bindInfoWindow(marker, map, infoWindow,title,html); 
+                      bindInfoWindow(marker, map, infoWindow,type,html); 
 				 	}
 			 
 				}
 
-		      function bindInfoWindow(marker, map, infoWindow, title, html) {
+		      function bindInfoWindow(marker, map, infoWindow, type, html) {
 					google.maps.event.addListener(marker, 'click', function() {
 							infoWindow.setContent(html);
 							infoWindow.open(map, marker);
 					});
 					google.maps.event.addListener(marker, 'mouseover', function() {
-						infoWindow.setContent(title);
+						infoWindow.setContent(type);
 						infoWindow.open(map, marker);
 					});
 				}
