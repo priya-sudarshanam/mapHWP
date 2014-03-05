@@ -14,42 +14,173 @@
 	return $result->fetchAll();
 	}
 	
+function map_insert_data($mapValues){
+  $dataInsert = NULL;
+  $table = 'osmap';
+  try {
+     $dataInsert = db_insert($table)
+	                ->fields($mapValues)
+					->execute();
+  }
+  catch(Exception $e)
+  {
+    drupal_set_message(t('db_insert failed. Message = %message, query=%query', 
+	           array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+  }
+ return $dataInsert;
+}
+function get_latitude($add){
+        $prepAddr = str_replace(' ','+',$add);
+        $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepAddr.'&sensor=false');
+        $output= json_decode($geocode);
+        $latitude = $output->results[0]->geometry->location->lat;
+        return $latitude;
+}
+function get_longitude($add){
+        $prepAddr = str_replace(' ','+',$add);
+        $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepAddr.'&sensor=false');
+        $output= json_decode($geocode);
+        $longitude = $output->results[0]->geometry->location->lng;
+		return $longitude;     
+}
+	
 function testmap_menu(){
 	
     $items = array();
     $items['testmap'] = array(
-        'title' => 'test map',
+        'title' => 'Map',
         'description' => 'A simple module changes the html context using JavaScript',
-        'page callback' => 'testmapshow', // call the page
-		'type' => MENU_NORMAL_ITEM,
-        'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
-    );		
+        'page callback' => 'mapShow', // call the page
+		'access callback' => true,
+		);
+	$items['testmap/map']=array(
+	    'title' => 'Map Display',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'weight' => -10,
+      //  'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
+    );	
+     $items['testmap/list'] =array(
+	   'title' => 'Locations List',
+	   'type' => MENU_LOCAL_TASK,
+	   'weight' => -9,
+	   'page callback' => 'locationList',
+	   'access callback' => TRUE,
+	 );
+	 $items['testmap/add'] = array (
+	   'title' => 'Add New Location',
+	   'type' => MENU_LOCAL_TASK,
+	   'weight' => -8,
+	   'page callback' => 'drupal_get_form',
+	    'page arguments' => array('testmap_form_add'),
+	   'access callback' => TRUE,
+	 );
 	return $items;
 }
 
-function testmapshow(){
-	$entries = test_data();
-	/* $ret_string = array();
-	$entry = t('');
-	$rows = array();
-    
+/* function find_lat(){
+  $address = '125 Mount Auburn Street, Cambridge MA';
+  $latitude = get_latitude($address);
+  return $latitude;
+  } */
+  
+function testmap_form_add($form, &$form_state){
+  $form = array();
+  $latitude = '';
+  $longitude ='';
+
+  $form['add'] = array(
+    '#type' => 'fieldset',
+	'#title' => t('Add new Location'),
+  );
+  $form['add']['name'] = array(
+    '#type' => 'textfield' ,
+	'#title' =>'Name',
+//	'#default_value' => 'Harvard Web Publishing',
+	'#required' => TRUE,
+	'#attributes' =>array('placeholder' => t('Harvard Web Publishing')),
+	'#size' => 20,
+  );
+  $form['add']['address'] = array(
+    '#type' => 'textfield',
+	'#title' => 'Address',
+	'#required' => TRUE,
+	'#attributes' =>array('placeholder' => t('125 Mount Auburn Street, Cambridge, MA')),
+	'#size' => 50,
+  );
+ 
+  $form['add']['type'] = array(
+   '#type' => 'textfield',
+   '#title' => 'Type',
+   '#required' => TRUE,
+   '#attributes' =>array('placeholder' => t('university, office, business')),
+   '#size' => 10,
+  );
+ /*  $form['add']['title'] = array(
+   '#type' => 'textfield',
+   '#title' => 'Title',
+   '#size' => 4,
+  ); */
+  $form['add']['submit'] =array (
+   '#type' => 'submit',
+   '#value' => t('Add'),
+  );
+  
+  return $form;
+ }
+ 
+ function testmap_form_add_submit($form, &$form_state){
+    $address = $form_state['values']['address'];
+	$name = $form_state['values']['name'];
+	$type = strtolower($form_state['values']['type']);
+	//$title = $form_state['values']['title'];
+	$locationLatitude = get_latitude($form_state['values']['address']);
+	$locationLongitude = get_longitude($form_state['values']['address']);
+	
+	if (!ctype_lower($name)){
+		   drupal_set_message(t('Name can only have alphabets'), 'error');
+		   //+ drupal_set_message($message, 'error');
+		}
+	else {
+		
+    $mapValues = array(
+	  'name' => $name,
+	  'address' => $address,
+	  'lat' => $locationLatitude,
+	  'lng' => $locationLongitude,
+	  'type' => $type,
+//	  'title' => $title,
+	);
+	
+	$returnValue = map_insert_data($mapValues);
+	if ($returnValue) {
+	   drupal_set_message(t('Successfully added new location'));
+	 }
+    }
+ }
+ 
+function locationList(){
+   $output ='';
+   $entries = test_data();
+   if ($entries){
+    $rows = array();
 	foreach ($entries as $entry){
-	     $rows[] = array_map('check_plain', (array) $entry);
-			}
-	
-	foreach ($rows as $row) {
-	    $ret_string[] = array_map('check_plain', array(
-		     'lat' => $row['lat'],
-			 'lng' => $row['lng'],
-			 'name' => $row['name'],
-			 'title' => $row['title'],
-			 'type' => $row['type'],
-			 'address' => $row['address']
-		));
-	} */
-	
-     $build = array(
-	  '#markup' => '<div id="googleMap" style="width: 70%; height: 500px;"></div>',
+	  $rows[] = array_map('check_plain', (array)$entry);
+	}
+	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Title'));
+	$output .= theme('table', array('header' => $header, 'rows'=>$rows));
+	}
+	else
+	 {
+	   drupal_set_message(t('No locations have been added yet.'));
+	 }
+   
+    return $output;
+   }
+
+function mapShow(){
+	$entries = test_data();
+	$build = array(
+	  '#markup' => '<div id="googleMap" style="width: 70%; height: 400px;"></div>',
 	  '#attached' => array (
 	     'js' => array (
 		    'https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false' => array('type' => 'external',),
@@ -65,10 +196,8 @@ function testmapshow(){
 			),
      );  
 		 
-	//drupal_add_js(array ("testmap" => $ret_string), 'setting');	 
-    return $build;	  
+	return $build;	  
 }
-
 
 
 
