@@ -28,7 +28,7 @@ function OSMap_menu(){
   );
   
 	$items['OSMap/list'] = array(
-    'title' => 'List',
+    'title' => 'Address List',
 	'page callback' => 'OSMap_list',
 	'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
@@ -36,7 +36,7 @@ function OSMap_menu(){
   );
 	
 	$items['OSMap/add'] = array(
-    'title' => 'Add entry',
+    'title' => 'Add Address Entry',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('OSMap_form_add'),
     'access callback' => TRUE,
@@ -83,7 +83,7 @@ function OSMap_entry_load() {
   // Read all fields from the dbtng_example table.
   $select = db_select('OSMap', 'example');
   $select->fields('example');
-  $entry = t('');
+  $entry = array();
   
   // Add each field and value as a condition to this query.
   foreach ($entry as $field => $value) {
@@ -212,7 +212,7 @@ function OSMap_map_show(){
 	
 	drupal_add_js(array ("OSMap" => $makers), 'setting');
 	
-	return '<div id="googleMap" style="width:500px;height:380px;"></div>';
+	return '<div id="googleMap" style="width:690px;height:500px;"></div>';
 			
 }
 
