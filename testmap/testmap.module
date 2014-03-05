@@ -1,6 +1,6 @@
 <?php
 /**
- * Implementation of hook_menu
+ * Retrieve data from the table = 'osmap'
  */
  function test_data(){
     $table = 'osmap';
@@ -14,6 +14,9 @@
 	return $result->fetchAll();
 	}
 	
+/**
+ * Insert location values into the table
+ */
 function map_insert_data($mapValues){
   $dataInsert = NULL;
   $table = 'osmap';
@@ -29,6 +32,10 @@ function map_insert_data($mapValues){
   }
  return $dataInsert;
 }
+
+/**
+ * Returns the latitude of a location
+ */
 function get_latitude($add){
         $prepAddr = str_replace(' ','+',$add);
         $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepAddr.'&sensor=false');
@@ -36,6 +43,10 @@ function get_latitude($add){
         $latitude = $output->results[0]->geometry->location->lat;
         return $latitude;
 }
+
+/**
+ * Returns the longitude of a location
+ */
 function get_longitude($add){
         $prepAddr = str_replace(' ','+',$add);
         $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepAddr.'&sensor=false');
@@ -43,21 +54,23 @@ function get_longitude($add){
         $longitude = $output->results[0]->geometry->location->lng;
 		return $longitude;     
 }
-	
+
+/**
+ * hook_menu for map
+ */	
 function testmap_menu(){
 	
     $items = array();
     $items['testmap'] = array(
         'title' => 'Map',
         'description' => 'A simple module changes the html context using JavaScript',
-        'page callback' => 'mapShow', // call the page
+        'page callback' => 'mapShow', 
 		'access callback' => true,
 		);
 	$items['testmap/map']=array(
 	    'title' => 'Map Display',
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'weight' => -10,
-      //  'access arguments' => array('access content'), //The argument below is recommended for all users to have access to a page.
     );	
      $items['testmap/list'] =array(
 	   'title' => 'Locations List',
@@ -71,18 +84,24 @@ function testmap_menu(){
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -8,
 	   'page callback' => 'drupal_get_form',
-	    'page arguments' => array('testmap_form_add'),
+	   'page arguments' => array('testmap_form_add'),
+	   'access callback' => TRUE,
+	 );
+	 $items['testmap/remove'] = array (
+	//   'title' => 'Remove Location',
+	   'page callback' => 'checkLink',
+	//   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
 	 );
 	return $items;
 }
+function checkLink(){
+  echo 'hello';
 
-/* function find_lat(){
-  $address = '125 Mount Auburn Street, Cambridge MA';
-  $latitude = get_latitude($address);
-  return $latitude;
-  } */
-  
+}
+/**
+ * adds new location to the table
+ */  
 function testmap_form_add($form, &$form_state){
   $form = array();
   $latitude = '';
@@ -95,7 +114,6 @@ function testmap_form_add($form, &$form_state){
   $form['add']['name'] = array(
     '#type' => 'textfield' ,
 	'#title' =>'Name',
-//	'#default_value' => 'Harvard Web Publishing',
 	'#required' => TRUE,
 	'#attributes' =>array('placeholder' => t('Harvard Web Publishing')),
 	'#size' => 20,
@@ -106,8 +124,7 @@ function testmap_form_add($form, &$form_state){
 	'#required' => TRUE,
 	'#attributes' =>array('placeholder' => t('125 Mount Auburn Street, Cambridge, MA')),
 	'#size' => 50,
-  );
- 
+  ); 
   $form['add']['type'] = array(
    '#type' => 'textfield',
    '#title' => 'Type',
@@ -115,12 +132,14 @@ function testmap_form_add($form, &$form_state){
    '#attributes' =>array('placeholder' => t('university, office, business')),
    '#size' => 10,
   );
- /*  $form['add']['title'] = array(
+  $form['add']['type'] = array(
    '#type' => 'textfield',
-   '#title' => 'Title',
-   '#size' => 4,
-  ); */
-  $form['add']['submit'] =array (
+   '#title' => 'Type',
+   '#required' => TRUE,
+   '#attributes' =>array('placeholder' => t('university, office, business')),
+   '#size' => 10,
+  );
+ $form['add']['submit'] =array (
    '#type' => 'submit',
    '#value' => t('Add'),
   );
@@ -128,45 +147,61 @@ function testmap_form_add($form, &$form_state){
   return $form;
  }
  
+ /**
+ * checks validity of the fields and if correct inserts into the database
+ */
  function testmap_form_add_submit($form, &$form_state){
     $address = $form_state['values']['address'];
 	$name = $form_state['values']['name'];
 	$type = strtolower($form_state['values']['type']);
-	//$title = $form_state['values']['title'];
 	$locationLatitude = get_latitude($form_state['values']['address']);
 	$locationLongitude = get_longitude($form_state['values']['address']);
 	
 	if (!ctype_lower($name)){
 		   drupal_set_message(t('Name can only have alphabets'), 'error');
-		   //+ drupal_set_message($message, 'error');
 		}
 	else {
-		
-    $mapValues = array(
-	  'name' => $name,
-	  'address' => $address,
-	  'lat' => $locationLatitude,
-	  'lng' => $locationLongitude,
-	  'type' => $type,
-//	  'title' => $title,
-	);
+      $mapValues = array(
+					'name' => $name,
+					'address' => $address,
+					'lat' => $locationLatitude,
+					'lng' => $locationLongitude,
+					'type' => $type,
+					);
 	
-	$returnValue = map_insert_data($mapValues);
-	if ($returnValue) {
-	   drupal_set_message(t('Successfully added new location'));
-	 }
-    }
+	  $returnValue = map_insert_data($mapValues);
+	  if ($returnValue) { 
+	       drupal_set_message(t('Successfully added new location'));
+	     }
+     }
  }
- 
+
+ /**
+ * Displays values of the location in a table
+ */
 function locationList(){
    $output ='';
    $entries = test_data();
    if ($entries){
     $rows = array();
+	
+	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Remove'));
 	foreach ($entries as $entry){
+                $rows[] = array(
+                       $entry->id, 
+                       $entry->name, 
+					   $entry->address,
+					   $entry->lat,
+					   $entry->lng,
+					   $entry->type,
+                       l('delete', "testmap/remove" ),
+                );
+            }
+	
+/*	foreach ($entries as $entry){
 	  $rows[] = array_map('check_plain', (array)$entry);
-	}
-	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Title'));
+	}*/
+	
 	$output .= theme('table', array('header' => $header, 'rows'=>$rows));
 	}
 	else
@@ -177,6 +212,9 @@ function locationList(){
     return $output;
    }
 
+ /**
+ * display the map with all the locations present in the table
+ */
 function mapShow(){
 	$entries = test_data();
 	$build = array(
