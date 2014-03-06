@@ -96,13 +96,14 @@ function testmap_menu(){
 	return $items;
 }
 function checkLink($id){
-     $success= db_delete('osmap')->condition('id', $id)->execute();
+      $success= db_delete('osmap')->condition('id', $id)->execute();
+	 
 	 if ($success) { 
-	       drupal_set_message(t('Successfully deleted location'));
+	       return drupal_set_message(t('Successfully deleted location'));
 	     }   
 	  else
 	     {
-		   drupal_set_message(t('Error deleting location'), 'error');
+		   return drupal_set_message(t('Successfully deleted location'));
 		 }  
   }
 /**
@@ -163,11 +164,7 @@ function testmap_form_add($form, &$form_state){
 	$locationLatitude = get_latitude($form_state['values']['address']);
 	$locationLongitude = get_longitude($form_state['values']['address']);
 	
-	if (!ctype_lower($name)){
-		   drupal_set_message(t('Name can only have alphabets'), 'error');
-		}
-	else {
-      $mapValues = array(
+	$mapValues = array(
 					'name' => $name,
 					'address' => $address,
 					'lat' => $locationLatitude,
@@ -179,13 +176,9 @@ function testmap_form_add($form, &$form_state){
 	  if ($returnValue) { 
 	       drupal_set_message(t('Successfully added new location'));
 	     }
-     }
+     
  }
  
-function say_hello(){
-  echo "hello";
-}
-
  /**
  * Displays values of the location in a table
  */
@@ -205,8 +198,7 @@ function locationList(){
 	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'));
 	foreach ($entries as $entry){
 	   $options = array(
-		'query' => drupal_get_destination(),
-		
+		'query' => drupal_get_destination(),		
 		);
                 $rows[] = array(
                        $entry->id, 
