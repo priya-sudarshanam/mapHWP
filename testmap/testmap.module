@@ -5,7 +5,7 @@
  function test_data(){
     $table = 'osmap';
 	$osmap_true = 1;
-	$query = ('SELECT * FROM '. $table. ' WHERE ' . $osmap_true);
+	$query = ('SELECT * FROM '. $table. ' WHERE active= ' . $osmap_true);
     $result = db_query($query);
 	if (!$result) {  
        die('Invalid query: ' . mysql_error());
@@ -87,23 +87,34 @@ function testmap_menu(){
 	   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
 	 );
-	 $items['testmap/remove/%'] = array (
-	//   'title' => 'Remove Location',
-	   'page callback' => 'checkLink',
+	 $items['testmap/delete/%'] = array (
+	   'page callback' => 'deleteLocation',
 	   'page arguments' => array(2),
 	   'access callback' => TRUE,
+	   'type' =>MENU_CALLBACK,
 	 );
 	return $items;
 }
-function checkLink($id){
-      $success= db_delete('osmap')->condition('id', $id)->execute();
-	 
+/**
+ * Delete the selected location from the table = 'osmap'. 
+ * The deletion sets the 'active' status to 0 and hence the location
+ * does not get displayed
+ */
+function deleteLocation($id){
+ $success= db_update('osmap') 
+				->fields(array(
+					'active' => 0,
+					))
+				->condition('id', $id)
+				->execute();
+  
 	 if ($success) { 
-	       return drupal_set_message(t('Successfully deleted location'));
-	     }   
+	       drupal_set_message(t('Successfully deleted location'));
+		   drupal_goto($_GET['destination']);
+       }   
 	  else
 	     {
-		   return drupal_set_message(t('Successfully deleted location'));
+		   drupal_set_message(t('Successfully deleted location'));
 		 }  
   }
 /**
@@ -123,7 +134,7 @@ function testmap_form_add($form, &$form_state){
 	'#title' =>'Name',
 	'#required' => TRUE,
 	'#attributes' =>array('placeholder' => t('Harvard Web Publishing')),
-	'#size' => 20,
+	'#size' => 40,
   );
   $form['add']['address'] = array(
     '#type' => 'textfield',
@@ -170,6 +181,7 @@ function testmap_form_add($form, &$form_state){
 					'lat' => $locationLatitude,
 					'lng' => $locationLongitude,
 					'type' => $type,
+					'active' => 1,
 					);
 	
 	  $returnValue = map_insert_data($mapValues);
@@ -183,23 +195,15 @@ function testmap_form_add($form, &$form_state){
  * Displays values of the location in a table
  */
 function locationList(){
-   $options = array(
-		'query' => drupal_get_destination(),
-		'attributes' => array(
-			'class' => array('add-new'),
-    'id' => 'add-new-discount-product',
-  ),
-);
    $output ='';
    $entries = test_data();
+   
    if ($entries){
     $rows = array();
 	
 	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'));
 	foreach ($entries as $entry){
-	   $options = array(
-		'query' => drupal_get_destination(),		
-		);
+	   $options = array('query' => drupal_get_destination(),);
                 $rows[] = array(
                        $entry->id, 
                        $entry->name, 
@@ -207,7 +211,7 @@ function locationList(){
 					   $entry->lat,
 					   $entry->lng,
 					   $entry->type,
-                       l(t('delete'), "testmap/remove/".$entry->id,$options),
+                       l(t('Delete'), "testmap/delete/".$entry->id,$options),
                 );
             }
 	
