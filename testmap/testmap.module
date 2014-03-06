@@ -96,14 +96,14 @@ function testmap_menu(){
 	return $items;
 }
 function checkLink($id){
-    $success= db_delete('osmap')->condition('id', $id)->execute();
-	if ($success) { 
+     $success= db_delete('osmap')->condition('id', $id)->execute();
+	 if ($success) { 
 	       drupal_set_message(t('Successfully deleted location'));
 	     }   
 	  else
 	     {
 		   drupal_set_message(t('Error deleting location'), 'error');
-		 }
+		 }  
   }
 /**
  * adds new location to the table
@@ -190,6 +190,13 @@ function say_hello(){
  * Displays values of the location in a table
  */
 function locationList(){
+   $options = array(
+		'query' => drupal_get_destination(),
+		'attributes' => array(
+			'class' => array('add-new'),
+    'id' => 'add-new-discount-product',
+  ),
+);
    $output ='';
    $entries = test_data();
    if ($entries){
@@ -197,6 +204,10 @@ function locationList(){
 	
 	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'));
 	foreach ($entries as $entry){
+	   $options = array(
+		'query' => drupal_get_destination(),
+		
+		);
                 $rows[] = array(
                        $entry->id, 
                        $entry->name, 
@@ -204,7 +215,7 @@ function locationList(){
 					   $entry->lat,
 					   $entry->lng,
 					   $entry->type,
-                       l(t('delete'), "testmap/remove/" .$entry->id),
+                       l(t('delete'), "testmap/remove/".$entry->id,$options),
                 );
             }
 	
