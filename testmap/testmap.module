@@ -90,7 +90,7 @@ function testmap_menu(){
 		'weight' => -10,
     );	
      $items['testmap/list'] =array(
-	   'title' => 'Locations List',
+	   'title' => 'Locations List & Delete',
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -9,
 	   'page callback' => 'locationList',
@@ -104,6 +104,11 @@ function testmap_menu(){
 	   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
 	 );
+	 $items['testmap/delete/%'] = array (
+	   'page callback' => 'deleteLocation',
+	   'page arguments' => array(2,3),
+	   'access callback' => TRUE,
+     );
 	 $items['testmap/update'] = array (
 	   'title' => 'Update Location',
 	   'type' => MENU_LOCAL_TASK,
@@ -112,18 +117,77 @@ function testmap_menu(){
 	   'page arguments' => array('testmap_form_update'),
 	   'access callback' => TRUE,
 	 );
-	 $items['testmap/delete/%'] = array (
-	   'page callback' => 'deleteLocation',
-	   'page arguments' => array(2,3),
-	   'access callback' => TRUE,
-     );
 	 
 	return $items;
 }
 /**
+ * Updates the selected location in the table = 'osmap'. 
+ */
+function testmap_form_update($form, &$form_state){
+
+    $form = array(
+			'#prefix' => '<div id="updateform">',
+			'#suffix' => '</div>',  
+		);
+        $typeOptions = array("university", "business", "office");
+		$mapValues = map_select_data();
+        if (empty($mapValues))
+		{
+		  $form['no_values'] = array(
+		    '#value' => t('No locations in the table'),
+		  );
+		  return $form;
+		}
+		
+		foreach($mapValues as $mapValue) {
+		  $options[$mapValue->id] = t("ID:@id:  ,NAME: @name   ,ADDRESS: @address    ,TYPE: @type ",
+		                            array('@id' => $mapValue->id, '@name' =>$mapValue->name,
+									      '@address' =>$mapValue->address,'@type' =>$mapValue->type));
+		  $mapEntries[$mapValue->id] = $mapValue;
+		}
+		$default_location = !empty($form_state['values']['id']) ?
+                $mapEntries[$form_state['values']['id']] : $mapValues[0];
+				
+		
+		$form_state['mapValues'] = $mapEntries;
+		$form['id'] = array(
+		  '#type' =>'select',
+		  '#options' => $options,
+		  '#title' =>t('Choose a location to update'),
+		  '#default_value' => $default_location->id,
+		  '#ajax' => array(
+		       'wrapper' => 'updateform',
+			   'callback' => 'testmap_form_update_callback',	  
+		  ),	
+		);
+		$form['name'] = array(
+		  '#type' => 'textfield',
+		  '#title' => t('Updated location name'),
+		  '#size' => 40,
+		);
+		$form['address'] = array(
+		  '#type' => 'textfield',
+		  '#title' => t('Updated location address'),
+		  '#size' => 40,
+		);
+		$form['type'] = array(
+		  '#type' => 'select',
+		  '#options' => $typeOptions,
+		  '#title' => t('Updated location type'),
+		  '#default_value' => $typeOptions[0],	
+ 		);
+		
+		$form['submit'] = array (
+		  '#type' => 'submit',
+		  '#value' => t('Update'),
+		);
+		
+		return $form;
+	 
+}
+
+/**
  * Delete the selected location from the table = 'osmap'. 
- * The deletion sets the 'active' status to 0 and hence the location
- * does not get displayed
  */
 function deleteLocation($id,$name){
      try {
@@ -147,7 +211,9 @@ function testmap_form_add($form, &$form_state){
   $form = array();
   $latitude = '';
   $longitude ='';
-
+  $typeOptions = array("university", "business", "office");
+  
+  
   $form['add'] = array(
     '#type' => 'fieldset',
 	'#title' => t('Add new Location'),
@@ -167,18 +233,11 @@ function testmap_form_add($form, &$form_state){
 	'#size' => 50,
   ); 
   $form['add']['type'] = array(
-   '#type' => 'textfield',
+   '#type' => 'select',
    '#title' => 'Type',
+   '#options' => $typeOptions,
    '#required' => TRUE,
-   '#attributes' =>array('placeholder' => t('university, office, business')),
-   '#size' => 10,
-  );
-  $form['add']['type'] = array(
-   '#type' => 'textfield',
-   '#title' => 'Type',
-   '#required' => TRUE,
-   '#attributes' =>array('placeholder' => t('university, office, business')),
-   '#size' => 10,
+   '#default_value' => $typeOptions[0],
   );
  $form['add']['submit'] =array (
    '#type' => 'submit',
@@ -192,22 +251,23 @@ function testmap_form_add($form, &$form_state){
  * checks validity of the fields and if correct inserts into the database
  */
  function testmap_form_add_submit($form, &$form_state){
+      $typeKey = $form['add']['type']['#options'][$form_state['values']['type']];
       try {
-        	$mapValues = array(
-				'name' => $form_state['values']['name'],
-				'address' => $form_state['values']['address'],
-				'lat' => get_latitude($form_state['values']['address']),
-				'lng' => get_longitude($form_state['values']['address']),
-				'type' => strtolower($form_state['values']['type']),
+				$mapValues = array(
+					'name' => $form_state['values']['name'],
+					'address' => $form_state['values']['address'],
+					'lat' => get_latitude($form_state['values']['address']),
+					'lng' => get_longitude($form_state['values']['address']),
+					'type' => $form['add']['type']['#options'][$form_state['values']['type']],
+				//	'type' => $typeKey,
+					
 				);
 	
-	       $returnValue = map_insert_data($mapValues);
-	/*        if ($returnValue) { 
-	            drupal_set_message(t('Successfully added new location'));
-	           }   */
-          }
-      catch (Exception $e){
-           drupal_set_message(t('db_query failed. Message = %message, query=%query', 
+				$returnValue = map_insert_data($mapValues);
+				drupal_set_message(t('Successfully added new location'));
+	      }
+       catch (Exception $e){
+                drupal_set_message(t('db_query failed. Message = %message, query=%query', 
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
@@ -219,10 +279,11 @@ function testmap_form_add($form, &$form_state){
 function locationList(){
    $output ='';
    $entries = map_select_data();
+   try {
+   
    
    if ($entries){
     $rows = array();
-	
 	$header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'));
 	foreach ($entries as $entry){
 	   $options = array('query' => drupal_get_destination(),);
@@ -236,27 +297,29 @@ function locationList(){
                        l(t('Delete'), "testmap/delete/".$entry->id ."/".$entry->name,$options),
                 );
             }
-	
+
 /*	foreach ($entries as $entry){
 	  $rows[] = array_map('check_plain', (array)$entry);
 	}*/
-	
+
 	$output .= theme('table', array('header' => $header, 'rows'=>$rows));
 	}
-	else
-	 {
+	}
+	catch (Exception $e){
 	   drupal_set_message(t('No locations have been added yet.'));
 	 }
    
     return $output;
    }
 
- /**
+   
+    /**
  * display the map with all the locations present in the table
  */
 function mapShow(){
-	$entries = map_select_data();
-	$build = array(
+  try {
+ 	 $entries = map_select_data();
+     $build = array(
 	  '#markup' => '<div id="googleMap" style="width: 70%; height: 400px;"></div>',
 	  '#attached' => array (
 	     'js' => array (
@@ -272,7 +335,11 @@ function mapShow(){
 			
 			),
      );  
-		 
+   }
+  catch (Exception $ex)
+    {
+       drupal_set_message(t('Error in displaying the map. Apologize for the inconvenience. Please contact admin/support'));
+    }	
 	return $build;	  
 }
 
