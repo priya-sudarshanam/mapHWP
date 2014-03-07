@@ -155,20 +155,22 @@ function testmap_form_update($form, &$form_state){
 		  '#options' => $options,
 		  '#title' =>t('Choose a location to update'),
 		  '#default_value' => $default_location->id,
-		  '#ajax' => array(
+	 	  '#ajax' => array(
 		       'wrapper' => 'updateform',
 			   'callback' => 'testmap_form_update_callback',	  
-		  ),	
+	   ),	
 		);
 		$form['name'] = array(
 		  '#type' => 'textfield',
 		  '#title' => t('Updated location name'),
 		  '#size' => 40,
+		  '#default_value' => $default_location->name,
 		);
 		$form['address'] = array(
 		  '#type' => 'textfield',
 		  '#title' => t('Updated location address'),
 		  '#size' => 40,
+		  '#default_value' => $default_location->address,
 		);
 		$form['type'] = array(
 		  '#type' => 'select',
@@ -182,8 +184,28 @@ function testmap_form_update($form, &$form_state){
 		  '#value' => t('Update'),
 		);
 		
-		return $form;
-	 
+		return $form;	 
+}
+
+function testmap_form_update_callback($form, $form_state){
+  $mapValue = $form_state['entries'][$form_state['values']['id']];
+  
+  foreach(array('name', 'address', 'type') as $item) {
+     $form[$item]['#value'] = $mapValue->$item;
+  }
+  return $form;
+} 
+
+function testmap_form_update_submit($form, &$form_state){
+    $mapValue = array (
+	    'id' => $form_state['values']['id'],
+        'name' => $form_state['values']['name'],
+		'address' => $form_state['values']['address'],
+		'type' => $form['type']['#options'][$form_state['values']['type']],
+        );
+    $count = map_update_data($mapValue);
+	drupal_set_message(t("Updated location @mapValue (@count row updated)", 
+	                     array('@count' => $count, '@mapValue' =>print_r($mapValue['name'], TRUE))));
 }
 
 /**
@@ -251,7 +273,7 @@ function testmap_form_add($form, &$form_state){
  * checks validity of the fields and if correct inserts into the database
  */
  function testmap_form_add_submit($form, &$form_state){
-      $typeKey = $form['add']['type']['#options'][$form_state['values']['type']];
+   //   $typeKey = $form['add']['type']['#options'][$form_state['values']['type']];
       try {
 				$mapValues = array(
 					'name' => $form_state['values']['name'],
@@ -259,7 +281,6 @@ function testmap_form_add($form, &$form_state){
 					'lat' => get_latitude($form_state['values']['address']),
 					'lng' => get_longitude($form_state['values']['address']),
 					'type' => $form['add']['type']['#options'][$form_state['values']['type']],
-				//	'type' => $typeKey,
 					
 				);
 	
