@@ -18,7 +18,7 @@
 	}
 	
 
-	/**
+/**
  * Insert location values into the table
  */
 function map_insert_data($mapValues){
@@ -37,6 +37,9 @@ function map_insert_data($mapValues){
  return $dataInsert;
 }
 
+/**
+ * Update location values in the table
+ */
 function map_update_data($mapValues){
   try {
      $updated = db_update('osmap')
@@ -51,3 +54,21 @@ function map_update_data($mapValues){
   return $updated;
 
 }
+
+/**
+ * Delete location in the table
+ */
+function map_delete_data($id){
+    try {
+            $success= db_delete('osmap')
+					 ->condition('id', $id)
+		          	 ->execute();
+			}
+	 catch(Exception $e)
+	     {
+	        drupal_set_message(t('db_query failed. Message = %message, query=%query', 
+	           array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+	    }
+	return $success;
+ 
+ }
