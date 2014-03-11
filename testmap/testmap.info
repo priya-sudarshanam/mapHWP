@@ -1,3 +1,5 @@
 name = testmap
-description = maptesting
+description = Displays map, adds, updates and deletes a location
 core = 7.x
+files[] = testmap.js, testmap.module, testmap.dbfunctions.inc
+
