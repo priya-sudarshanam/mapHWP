@@ -50,10 +50,16 @@ function testmap_menu(){
 	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
      );
+	 $items['testmap/edit/%'] = array (
+	   'page callback' => 'editLocation',
+	   'page arguments' => array(2,3),
+	   'access callback' => TRUE,
+	   'weight' => -7,
+     );
 	 $items['testmap/update'] = array (
 	   'title' => 'Update Location',
 	   'type' => MENU_LOCAL_TASK,
-	   'weight' => -7,
+	   'weight' => -6,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_update'),
 	   'access callback' => TRUE,
@@ -61,6 +67,31 @@ function testmap_menu(){
 	 
 	return $items;
 }
+/**
+ * Update the selected location in the table = 'osmap'. 
+ */ 
+function editLocation($id,$name){
+    $output ='';
+     drupal_set_message(t('id is:' .$id));
+ 	 $mapValue = map_select_data_id($id);
+	 if ($mapValue){
+           $rows = array();
+	       $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'));
+	       foreach ($mapValue as $mV){
+	            $rows[] = array(
+                       $mV->id, 
+                       $mV->name, 
+					   $mV->address,
+					   $mV->lat,
+					   $mV->lng,
+					   $mV->type,
+                );
+            }
+	     $output .= theme('table', array('header' => $header, 'rows'=>$rows));
+	   }
+     return $output;
+ }
+ 
 /**
  * Updates the selected location in the table = 'osmap'. 
  */
@@ -236,8 +267,6 @@ function testmap_form_add($form, &$form_state){
 					'lat' => $lat_lng['lat'],
 					'lng' => $lat_lng['lng'],
 					'type' => $form_state['values']['type'], // bcos i put the select of type array as int indexes
-		//			'type' => $form['add']['type']['#options'][$form_state['values']['type']],
-					
 				);
 	
 				$returnValue = map_insert_data($mapValues);
@@ -266,7 +295,7 @@ function locationList(){
    
         if ($mapValues){
           $rows = array();
-	      $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'));
+	      $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
 	      foreach ($mapValues as $mapValue){
 	            $options = array('query' => drupal_get_destination(),);
                 $rows[] = array(
@@ -277,6 +306,8 @@ function locationList(){
 					   $mapValue->lng,
 					   $mapValue->type,
                        l(t('Delete'), "testmap/delete/".$mapValue->id ."/".$mapValue->name,$options),
+					   l(t('Edit'), "testmap/edit/".$mapValue->id ."/".$mapValue->name)
+					   
                 );
             }
 	     $output .= theme('table', array('header' => $header, 'rows'=>$rows));
