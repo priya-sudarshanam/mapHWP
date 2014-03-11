@@ -70,8 +70,12 @@ function testmap_form_update($form, &$form_state){
 			'#prefix' => '<div id="updateform">',
 			'#suffix' => '</div>',  
 		);
-        $typeOptions = array("university", "business", "office","library");
+        $typeOptions = array("university" => 'university',
+                       "business" => 'business', 
+					   "office" =>'office',
+					   "library" => 'library');  
 		$mapValues = map_select_data();
+		//when table is empty, take them to add location
         if (empty($mapValues))
 		{
 		  $form['no_values'] = array(
@@ -115,7 +119,7 @@ function testmap_form_update($form, &$form_state){
 		  '#type' => 'select',
 		  '#options' => $typeOptions,
 		  '#title' => t('Updated location type'),
-		  '#default_value' => $typeOptions[0],	
+		  '#default_value' => $typeOptions['university'],	
  		);
 		
 		$form['submit'] = array (
@@ -125,7 +129,9 @@ function testmap_form_update($form, &$form_state){
 		
 		return $form;	 
 }
-
+/**
+ * ajax callback for updating form
+ */
 function testmap_form_update_callback($form, $form_state){
   $mapValue = $form_state['entries'][$form_state['values']['id']];
   
@@ -135,12 +141,15 @@ function testmap_form_update_callback($form, $form_state){
   return $form;
 } 
 
+/**
+ * update submit form
+ */
 function testmap_form_update_submit($form, &$form_state){
    $mapValue = array (
 	    'id' => $form_state['values']['id'],
         'name' => $form_state['values']['name'],
 		'address' => $form_state['values']['address'],
-		'type' => $form['type']['#options'][$form_state['values']['type']],
+		'type' => $form_state['values']['type'],
         );
    try {
       $count = map_update_data($mapValue);
@@ -156,8 +165,7 @@ function testmap_form_update_submit($form, &$form_state){
 
 /**
  * Delete the selected location from the table = 'osmap'. 
- */
- 
+ */ 
 function deleteLocation($id,$name){
      $deleted = map_delete_data($id);
 	 if ($deleted){
@@ -175,10 +183,13 @@ function deleteLocation($id,$name){
  */  
 function testmap_form_add($form, &$form_state){
   $form = array();
-  $typeOptions = array("university","business", "office","library");  
+  $typeOptions = array("university" => 'university',
+                       "business" => 'business', 
+					   "office" =>'office',
+					   "library" => 'library');  
   
   $form['add'] = array(
-    '#type' => 'fieldset',
+    '#type' => 'fieldset', //container for multiple fields
 	'#title' => t('Add new Location'),
   );
   $form['add']['name'] = array(
@@ -200,7 +211,7 @@ function testmap_form_add($form, &$form_state){
    '#title' => 'Type',
    '#options' => $typeOptions,
    '#required' => TRUE,
-   '#default_value' => $typeOptions[0],
+   '#default_value' => $typeOptions['university'],
   );
  $form['add']['submit'] =array (
    '#type' => 'submit',
@@ -214,7 +225,7 @@ function testmap_form_add($form, &$form_state){
  * checks validity of the fields and if correct inserts into the database
  */
  function testmap_form_add_submit($form, &$form_state){
-  	
+  	//print_r formatted version of the array and var_dump but with more detail
     $lat_lng = get_latitude_longitude($form_state['values']['address']);
     if (preg_match('/^[a-zA-Z\s]+$/', $form_state['values']['name']))
 	{
@@ -224,12 +235,14 @@ function testmap_form_add($form, &$form_state){
 					'address' => $form_state['values']['address'],
 					'lat' => $lat_lng['lat'],
 					'lng' => $lat_lng['lng'],
-					'type' => $form['add']['type']['#options'][$form_state['values']['type']],
+					'type' => $form_state['values']['type'], // bcos i put the select of type array as int indexes
+		//			'type' => $form['add']['type']['#options'][$form_state['values']['type']],
 					
 				);
 	
 				$returnValue = map_insert_data($mapValues);
-				drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
+	//			dvm($form_state['values']['type']); //debugging command
+			    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
 	     }
 		 catch (Exception $e){
                 drupal_set_message(t('db_insert failed. Message = %message, query=%query', 
@@ -240,8 +253,7 @@ function testmap_form_add($form, &$form_state){
 	 else
 	 {
 	   drupal_set_message(t("Name can only contain alpha characters and space"),'error');
-	 }
-       
+	 }       
  }
  
  /**
@@ -271,12 +283,11 @@ function locationList(){
 	   }
 	}
 	catch (Exception $e){
-	   drupal_set_message(t('No locations have been added yet.'));
+	   drupal_set_message(t('No locations have been added yet.'), 'error');
 	 }
    
     return $output;
    }
-
    
     /**
  * display the map with all the locations present in the table
@@ -285,7 +296,7 @@ function mapShow(){
   try {
  	 $mapValues = map_select_data();
      $build = array(
-	  '#markup' => '<div id="googleMap" style="width: 70%; height: 400px;"></div>',
+	  '#markup' => '<div id="googleMap" style="width: 80%; height: 500px;"></div>',
 	  '#attached' => array (
 	     'js' => array (
 		    'https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false' => array('type' => 'external',),
@@ -296,9 +307,8 @@ function mapShow(){
 					'testmap' => $mapValues
 					)
 				)
-			)
-			
-			),
+			)		
+		),
      );  
    }
   catch (Exception $ex)
