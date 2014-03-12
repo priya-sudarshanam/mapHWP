@@ -95,8 +95,29 @@ function editLocation($id,$name){
  * Updates the selected location in the table = 'osmap'. 
  */
 function testmap_form_update($form, &$form_state, $value){
-    drupal_set_message(t('id is '.$value));
-    /* $form = array();
+    $id = (int)$value;
+	$mapValue = map_select_data_id($id);
+//	dvm($mapValue['id']);
+	  $rows = array();
+	  //t('Address'), t('Lat'), t('Lng'),t('Type')
+	  $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'));
+	//  foreach ($mapValue as $mapVal){
+	       $rows[] = array(
+		          $mapValue['id'],
+				  $mapValue['name'],
+                  $mapValue['address'],
+				  $mapValue['lat'],
+				  $mapValue['lng'],
+				  $mapValue['type'], 
+                );
+            //   }
+	   $form['table'] = array(
+	   '#theme' => 'table',
+	   '#header' => $header,
+	    '#rows' => $rows,
+	   );
+	 //  return $form;
+    /* $form = array(); */
     $typeOptions = array("university" => 'university', "business" => 'business', "office" =>'office', "library" => 'library');  
 	$form['name'] = array(
 	  '#type' => 'textfield',
@@ -119,7 +140,7 @@ function testmap_form_update($form, &$form_state, $value){
 	  '#value' => t('Update'),
 	);
 		
-	return $form;	 */ 
+	return $form;	 
 }
 /**
  * update submit form
