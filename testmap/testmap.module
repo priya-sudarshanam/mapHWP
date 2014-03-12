@@ -50,18 +50,17 @@ function testmap_menu(){
 	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
      );
-	 $items['testmap/edit/%'] = array (
+/* 	 $items['testmap/edit/%'] = array (
 	   'page callback' => 'editLocation',
 	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
-	   'weight' => -7,
-     );
-	 $items['testmap/update'] = array (
+	  ); */
+	 $items['testmap/%/update'] = array (
 	   'title' => 'Update Location',
 	   'type' => MENU_LOCAL_TASK,
-	   'weight' => -6,
+	   'weight' => -7,
 	   'page callback' => 'drupal_get_form',
-	   'page arguments' => array('testmap_form_update'),
+	   'page arguments' => array('testmap_form_update',1),
 	   'access callback' => TRUE,
 	 );
 	 
@@ -95,83 +94,33 @@ function editLocation($id,$name){
 /**
  * Updates the selected location in the table = 'osmap'. 
  */
-function testmap_form_update($form, &$form_state){
-
-    $form = array(
-			'#prefix' => '<div id="updateform">',
-			'#suffix' => '</div>',  
-		);
-        $typeOptions = array("university" => 'university',
-                       "business" => 'business', 
-					   "office" =>'office',
-					   "library" => 'library');  
-		$mapValues = map_select_data();
-		//when table is empty, take them to add location
-        if (empty($mapValues))
-		{
-		  $form['no_values'] = array(
-		    '#value' => t('No locations in the table'),
-		  );
-		  return $form;
-		}
+function testmap_form_update($form, &$form_state, $value){
+    drupal_set_message(t('id is '.$value));
+    /* $form = array();
+    $typeOptions = array("university" => 'university', "business" => 'business', "office" =>'office', "library" => 'library');  
+	$form['name'] = array(
+	  '#type' => 'textfield',
+	  '#title' => t('Updated location name'),
+	  '#size' => 40,
+	);
+    $form['address'] = array(
+	  '#type' => 'textfield',
+	  '#title' => t('Updated location address'),
+	  '#size' => 40,
+	);
+	$form['type'] = array(
+	  '#type' => 'select',
+	  '#options' => $typeOptions,
+	  '#title' => t('Updated location type'),
+	  '#default_value' => $typeOptions['university'],	
+ 	);
+	$form['submit'] = array (
+	  '#type' => 'submit',
+	  '#value' => t('Update'),
+	);
 		
-		foreach($mapValues as $mapValue) {
-		  $options[$mapValue->id] = t("ID:@id:  ,NAME: @name   ,ADDRESS: @address    ,TYPE: @type ",
-		                            array('@id' => $mapValue->id, '@name' =>$mapValue->name,
-									      '@address' =>$mapValue->address,'@type' =>$mapValue->type));
-		  $mapEntries[$mapValue->id] = $mapValue;
-		}
-		$default_location = !empty($form_state['values']['id']) ?
-                $mapEntries[$form_state['values']['id']] : $mapValues[0];
-				
-		
-		$form_state['mapValues'] = $mapEntries;
-		$form['id'] = array(
-		  '#type' =>'select',
-		  '#options' => $options,
-		  '#title' =>t('Choose a location to update'),
-		  '#default_value' => $default_location->id,
-	 	 /*  '#ajax' => array(
-		       'wrapper' => 'updateform',
-			   'callback' => 'testmap_form_update_callback', 	  
-	   ),	*/
-		);
-		$form['name'] = array(
-		  '#type' => 'textfield',
-		  '#title' => t('Updated location name'),
-		  '#size' => 40,
-		);
-		$form['address'] = array(
-		  '#type' => 'textfield',
-		  '#title' => t('Updated location address'),
-		  '#size' => 40,
-		);
-		$form['type'] = array(
-		  '#type' => 'select',
-		  '#options' => $typeOptions,
-		  '#title' => t('Updated location type'),
-		  '#default_value' => $typeOptions['university'],	
- 		);
-		
-		$form['submit'] = array (
-		  '#type' => 'submit',
-		  '#value' => t('Update'),
-		);
-		
-		return $form;	 
+	return $form;	 */ 
 }
-/**
- * ajax callback for updating form
- */
-function testmap_form_update_callback($form, $form_state){
-  $mapValue = $form_state['entries'][$form_state['values']['id']];
-  
-  foreach(array('name', 'address', 'type') as $item) {
-     $form[$item]['#value'] = $mapValue->$item;
-  }
-  return $form;
-} 
-
 /**
  * update submit form
  */
@@ -306,7 +255,7 @@ function locationList(){
 					   $mapValue->lng,
 					   $mapValue->type,
                        l(t('Delete'), "testmap/delete/".$mapValue->id ."/".$mapValue->name,$options),
-					   l(t('Edit'), "testmap/edit/".$mapValue->id ."/".$mapValue->name)
+					   l(t('Edit'), "testmap/".$mapValue->id."/update")				   
 					   
                 );
             }
