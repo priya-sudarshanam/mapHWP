@@ -14,6 +14,31 @@ function get_latitude_longitude($add){
         return $lat_lng;
 }
 /**
+ * Updates the selected location in the table = 'osmap'. 
+ */
+function id_to_arg($variable){
+  if ($variable == '%') {
+ 	// drupal_set_message(t('Please choose a location to update'));
+	 return 'none';
+//	 drupal_goto('testmap/list');
+	}
+  else {
+    return $variable;
+  
+  }
+ }
+ 
+/**
+* Returns type list for colored markers on the map. 
+*/
+function type_list(){
+  return array("university" => 'university', 
+               "business" => 'business', 
+			   "office" =>'office', 
+			   "library" => 'library');
+}
+ 
+/**
  * hook_menu for map
  */	
 function testmap_menu(){
@@ -31,7 +56,7 @@ function testmap_menu(){
 		'weight' => -10,
     );	
      $items['testmap/list'] =array(
-	   'title' => 'Locations List & Delete',
+	   'title' => 'Locations List, Delete & Edit',
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -9,
 	   'page callback' => 'locationList',
@@ -50,78 +75,60 @@ function testmap_menu(){
 	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
      );
-/* 	 $items['testmap/edit/%'] = array (
-	   'page callback' => 'editLocation',
-	   'page arguments' => array(2,3),
-	   'access callback' => TRUE,
-	  ); */
 	 $items['testmap/update/%id'] = array (
 	   'title' => 'Update Location',
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -7,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_update',2),
-	//   'access arguments' => array('testmap/update',2),
 	   'access callback' => TRUE,
 	 );
 	 
 	return $items;
 }
-function id_to_arg($variable){
-  if ($variable == '%') {
-     return 'none';
-	}
-  else {
-    return $variable;
-  
-  }
- }
+
 /**
  * Updates the selected location in the table = 'osmap'. 
  */
 function testmap_form_update($form, &$form_state, $variable){
-    $id = (int)$variable;
-	$mapValue = map_select_data_id($id);
+      $mapValue = map_select_data_id($variable);
 	  $rows = array();
-	  $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'));
-	       $rows[] = array(
-		          'id'=> $mapValue['id'],
+	  $header = array(t('Name'),t('Address'),t('Type'));
+	  $rows[] = array(
 				  'name' => $mapValue['name'],
                   'address' => $mapValue['address'],
-				  'lat' => $mapValue['lat'],
-				  'lng' => $mapValue['lng'],
-				  'type' => $mapValue['type'], 
+			      'type' => $mapValue['type'], 
                 );
-            //   }
-	   $form['table'] = array(
+     $form['table'] = array(
 	   '#theme' => 'table',
 	   '#empty' => t('No users found'),
 	   '#header' => $header,
 	   '#rows' => $rows,
-	    '#empty' =>t('Your table is empty'),	   
+	   '#id' => $variable,
 	   );
-	
-    $typeOptions = array("university" => 'university', "business" => 'business', "office" =>'office', "library" => 'library');  
-	$form['update'] = array(
+	  	
+    $typeOptions = type_list();  
+	return create_form($form, 'update');
+	/* $form['update'] = array(
     '#type' => 'fieldset', //container for multiple fields
 	'#title' => t('Update Existing Location'),
   );
 	$form['update']['name'] = array(
 	  '#type' => 'textfield',
-	  '#title' => t('Updated location name'),
+	  '#title' => 'Name',
 	  '#required' => TRUE,
 	  '#size' => 40,
 	);
     $form['update']['address'] = array(
 	  '#type' => 'textfield',
-	  '#title' => t('Updated location address'),
+	  '#title' => 'Address',
 	  '#required' => TRUE,
 	  '#size' => 40,
 	);
 	$form['update']['type'] = array(
 	  '#type' => 'select',
 	  '#options' => $typeOptions,
-	  '#title' => t('Updated location type'),
+	  '#title' => 'Type',
 	  '#required' => TRUE,
 	  '#default_value' => $typeOptions['university'],	
  	);
@@ -130,18 +137,20 @@ function testmap_form_update($form, &$form_state, $variable){
 	  '#value' => t('Update'),
 	);
 		
-	return $form;	 
+	return $form; */	 
 }
 /**
  * update submit form
  */
 function testmap_form_update_submit($form, &$form_state){
-    $updatingId=($form['table']['#rows'][0]['id']);
+    $updatingId=($form['table']['#id']);
+	$lat_lng = get_latitude_longitude($form_state['values']['address']);
      $mapValue = array (
-	//    'id' => $form_state['values']['id'],
-        'name' => $form_state['values']['name'],
+	    'name' => $form_state['values']['name'],
 		'address' => $form_state['values']['address'],
 		'type' => $form_state['values']['type'],
+		'lat' => $lat_lng['lat'],
+		'lng' => $lat_lng['lng'],		
         );
    try {
       $count = map_update_data($mapValue, $updatingId);
@@ -170,47 +179,53 @@ function deleteLocation($id,$name){
 	  }
  }
   
-/**
- * adds new location to the table
- */  
-function testmap_form_add($form, &$form_state){
-  $form = array();
-  $typeOptions = array("university" => 'university',
-                       "business" => 'business', 
-					   "office" =>'office',
-					   "library" => 'library');  
-  
-  $form['add'] = array(
+function create_form($form, $form_type){
+ $typeOptions = type_list();
+  $form[$form_type] = array(
     '#type' => 'fieldset', //container for multiple fields
 	'#title' => t('Add new Location'),
   );
-  $form['add']['name'] = array(
+  $form[$form_type]['name'] = array(
     '#type' => 'textfield' ,
 	'#title' =>'Name',
 	'#required' => TRUE,
 	'#attributes' =>array('placeholder' => t('Harvard Web Publishing')),
 	'#size' => 40,
   );
-  $form['add']['address'] = array(
+  $form[$form_type]['address'] = array(
     '#type' => 'textfield',
 	'#title' => 'Address',
 	'#required' => TRUE,
 	'#attributes' =>array('placeholder' => t('125 Mount Auburn Street, Cambridge, MA')),
 	'#size' => 50,
   ); 
-  $form['add']['type'] = array(
+  $form[$form_type]['type'] = array(
    '#type' => 'select',
    '#title' => 'Type',
    '#options' => $typeOptions,
    '#required' => TRUE,
    '#default_value' => $typeOptions['university'],
   );
- $form['add']['submit'] =array (
-   '#type' => 'submit',
-   '#value' => t('Add'),
-  );
+  if ($form_type == 'add'){
+    $form[$form_type]['submit'] =array (
+       '#type' => 'submit',
+	   '#value' => t('Add')
+	   );
+	}
+	else {
+	   $form[$form_type]['submit'] =array (
+           '#type' => 'submit',
+	       '#value' => t('Update')
+		   );
+	   }
   
-  return $form;
+return $form;
+}
+/**
+ * adds new location to the table
+ */  
+function testmap_form_add($form, &$form_state){
+    return create_form($form, 'add');
  }
  
  /**
@@ -231,7 +246,6 @@ function testmap_form_add($form, &$form_state){
 				);
 	
 				$returnValue = map_insert_data($mapValues);
-	//			dvm($form_state['values']['type']); //debugging command
 			    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
 	     }
 		 catch (Exception $e){
@@ -256,11 +270,10 @@ function locationList(){
    
         if ($mapValues){
           $rows = array();
-	      $header = array(t('Id'), t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
+	      $header = array(t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
 	      foreach ($mapValues as $mapValue){
 	            $options = array('query' => drupal_get_destination(),);
                 $rows[] = array(
-                       $mapValue->id, 
                        $mapValue->name, 
 					   $mapValue->address,
 					   $mapValue->lat,
