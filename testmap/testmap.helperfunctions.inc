@@ -1,6 +1,6 @@
 <?php
 /**
- * Returns the latitude of a location
+ * Returns the latitude and longitude of a location
  */
 function get_latitude_longitude($add){
         $prepAddr = str_replace(' ','+',$add);
@@ -36,6 +36,9 @@ function type_list(){
 			   "library" => 'library');
 }
 
+/**
+* creates a form for adding and updating locations 
+*/
 function create_form($form, $form_type){
  $typeOptions = type_list();
   $form[$form_type] = array(
@@ -79,29 +82,9 @@ function create_form($form, $form_type){
 return $form;
 }
 
-/**
- * Updates the selected location in the table = 'osmap'. 
- */
-function testmap_form_update($form, &$form_state, $variable){
-      $mapValue = map_select_data_id($variable);
-	  $rows = array();
-	  $header = array(t('Name'),t('Address'),t('Type'));
-	  $rows[] = array(
-				  'name' => $mapValue['name'],
-                  'address' => $mapValue['address'],
-			      'type' => $mapValue['type'], 
-                );
-     $form['table'] = array(
-	   '#theme' => 'table',
-	   '#empty' => t('No users found'),
-	   '#header' => $header,
-	   '#rows' => $rows,
-	   '#id' => $variable,
-	   );
-	  	
-    $typeOptions = type_list();  
-	return create_form($form, 'update');
-}
+/*
+* creates and returns array of map values
+*/
 function return_map_values($name,$address,$type,$lat,$lng){
   return $mapValue = array (
 	    'name' => $name,
@@ -111,3 +94,35 @@ function return_map_values($name,$address,$type,$lat,$lng){
 		'lng' => $lng
 		);
 }
+/*
+* creates and returns mal values in a table
+*/
+function create_map_table($mapValues){
+  $output ='';
+  try {  
+        if ($mapValues){
+          $rows = array();
+	      $header = array(t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
+	      foreach ($mapValues as $mapValue){
+	            $options = array('query' => drupal_get_destination(),);
+                $rows[] = array(
+                       $mapValue->name, 
+					   $mapValue->address,
+					   $mapValue->lat,
+					   $mapValue->lng,
+					   $mapValue->type,
+                       l(t('Delete'), "testmap/delete/".$mapValue->id ."/".$mapValue->name,$options),
+					   l(t('Edit'), "testmap/update/".$mapValue->id)				   
+					   
+                );
+            }
+	     $output .= theme('table', array('header' => $header, 'rows'=>$rows));
+	   }
+	}
+	catch (Exception $e){
+	  drupal_set_message(t('Failed to create map table. Message = %message, query=%query', 
+	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+	 }
+	return $output;
+ 
+ }
