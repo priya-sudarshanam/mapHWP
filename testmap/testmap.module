@@ -1,6 +1,13 @@
 <?php
+
+/* requiring files which contain dbfunctions and helper functions */
 require_once('testmap.dbfunctions.inc');
 require_once('testmap.helperfunctions.inc');
+
+/* tips
+* print_r formatted version of the array and var_dump but with more detail
+*/
+
 /**
  * hook_menu for map
  */	
@@ -64,7 +71,7 @@ function testmap_form_update_submit($form, &$form_state){
       drupal_set_message(t("Updated location @mapValue (@count row updated)", 
 	                     array('@count' => $count, '@mapValue' =>print_r($mapValues['name'], TRUE))));
 	  }
-   catch (Exception $ex)
+   catch (Exception $e)
     {
        drupal_set_message(t('db_update failed. Message = %message, query=%query', 
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
@@ -72,38 +79,40 @@ function testmap_form_update_submit($form, &$form_state){
 }
 
 /**
- * Delete the selected location from the table = 'osmap'. 
+ * Deletes the selected location from the table = 'osmap'. 
+ * returns the user to the same page
  */ 
 function deleteLocation($id,$name){
-     $deleted = map_delete_data($id);
-	 if ($deleted){
-	        drupal_set_message(t('Successfully deleted '.$name));		 
-            drupal_goto($_GET['destination']);
-      }			
-	  else {
-	         drupal_set_message(t('db_update failed. Message = %message, query=%query', 
-	         array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+ 	 try {
+	       $deleted = map_delete_data($id);{
+	       drupal_set_message(t('Successfully deleted location:  '.$name));		 
+           drupal_goto($_GET['destination']);
+         }
+      }	  
+	  catch (Exception $e) 
+	  {
+           drupal_set_message(t('db_update failed. Message = %message, query=%query', 
+	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 	  }
  }
   
 /**
- * adds new location to the table
+ * creates form for taking in new location details
  */  
 function testmap_form_add($form, &$form_state){
     return create_form($form, 'add');
  }
  
  /**
- * checks validity of the fields and if correct inserts into the database
+ * adds new location details to the table
  */
  function testmap_form_add_submit($form, &$form_state){
-  	//print_r formatted version of the array and var_dump but with more detail
     $lat_lng = get_latitude_longitude($form_state['values']['address']);
 	$mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
 	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
 									);
-    if (preg_match('/^[a-zA-Z\s]+$/', $form_state['values']['name']))
-	{
+   // if (preg_match('/^[a-zA-Z\s]+$/', $form_state['values']['name']))
+	//{
 	  try {
 				$returnValue = map_insert_data($mapValues);
 			    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
@@ -113,49 +122,27 @@ function testmap_form_add($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
-	 }
-	 else
+	// }
+	/*  else
 	 {
 	   drupal_set_message(t("Name can only contain alpha characters and space"),'error');
-	 }       
+	 }    */    
  }
  
  /**
- * Displays values of the location in a table
+ * Displays values of the location in a table. For eg: name, address and type of the location
+ * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationList(){
-   $output ='';
    $mapValues = map_select_data();
-   try {  
+   return create_map_table($mapValues);
+ }
    
-        if ($mapValues){
-          $rows = array();
-	      $header = array(t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
-	      foreach ($mapValues as $mapValue){
-	            $options = array('query' => drupal_get_destination(),);
-                $rows[] = array(
-                       $mapValue->name, 
-					   $mapValue->address,
-					   $mapValue->lat,
-					   $mapValue->lng,
-					   $mapValue->type,
-                       l(t('Delete'), "testmap/delete/".$mapValue->id ."/".$mapValue->name,$options),
-					   l(t('Edit'), "testmap/update/".$mapValue->id)				   
-					   
-                );
-            }
-	     $output .= theme('table', array('header' => $header, 'rows'=>$rows));
-	   }
-	}
-	catch (Exception $e){
-	   drupal_set_message(t('No locations have been added yet.'), 'error');
-	 }
-   
-    return $output;
-   }
-   
-    /**
+ /**
  * display the map with all the locations present in the table
+ * #markup -> displays a google map in the div
+ * #js -> attaches two js files, one external and one internal
+ * $mapValues are sent via settings feature in drupal 7
  */
 function mapShow(){
   try {
@@ -176,12 +163,14 @@ function mapShow(){
 		),
      );  
    }
-  catch (Exception $ex)
+  catch (Exception $e)
     {
-       drupal_set_message(t('Error in displaying the map. Apologize for the inconvenience. Please contact admin/support'));
+       drupal_set_message(t('Error in displaying map. Message = %message, query=%query', 
+	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
     }	
 	return $build;	  
 }
+
 
 
 
