@@ -56,7 +56,29 @@ function testmap_menu(){
 	 
 	return $items;
 }
-
+/**
+ * Updates the selected location in the table = 'osmap'. 
+ */
+function testmap_form_update($form, &$form_state, $variable){
+      $mapValue = map_select_data_id($variable);
+	  $rows = array();
+	  $header = array(t('Name'),t('Address'),t('Type'));
+	  $rows[] = array(
+				  'name' => $mapValue['name'],
+                  'address' => $mapValue['address'],
+			      'type' => $mapValue['type'], 
+                );
+     $form['table'] = array(
+	   '#theme' => 'table',
+	   '#empty' => t('No users found'),
+	   '#header' => $header,
+	   '#rows' => $rows,
+	   '#id' => $variable,
+	   );
+	  	
+    $typeOptions = type_list();  
+	return create_form($form, 'update');
+}
 /**
  * update submit form
  */
@@ -73,7 +95,7 @@ function testmap_form_update_submit($form, &$form_state){
 	  }
    catch (Exception $e)
     {
-       drupal_set_message(t('db_update failed. Message = %message, query=%query', 
+       drupal_set_message(t('Failed to update location. Message = %message, query=%query', 
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
       }
 }
@@ -91,12 +113,12 @@ function deleteLocation($id,$name){
       }	  
 	  catch (Exception $e) 
 	  {
-           drupal_set_message(t('db_update failed. Message = %message, query=%query', 
+           drupal_set_message(t('Failed to delete location. Message = %message, query=%query', 
 	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 	  }
  }
   
-/**
+ /**
  * creates form for taking in new location details
  */  
 function testmap_form_add($form, &$form_state){
@@ -104,7 +126,7 @@ function testmap_form_add($form, &$form_state){
  }
  
  /**
- * adds new location details to the table
+ * adds new location details to the table = 'osmap'
  */
  function testmap_form_add_submit($form, &$form_state){
     $lat_lng = get_latitude_longitude($form_state['values']['address']);
