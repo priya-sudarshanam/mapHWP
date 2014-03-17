@@ -1,4 +1,0 @@
-name = OSMAP
-description = OSMAP module
-core = 7.x
-files[] = osmap_example.test
