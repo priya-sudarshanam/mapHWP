@@ -1,0 +1,86 @@
+<?php  
+
+/**
+ * @file
+ * osmap module implementing simple hook_menu
+ */
+  
+//osmap_entry_load loads the data from the osmap table
+ function osmap_load($entry = array()) {
+  // Read all fields from the osmap table.
+  $select = db_select('osmap', 'os');
+  $select->fields('os');
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form() for all our example cases.
+ */
+/**function dbtng_example_menu() {*/
+function osmap_menu() {
+  $items = array();
+
+  /* $items['osmap'] = array(
+    'title' => 'OSMAP',
+    'page callback' => 'osmap_create_xml',
+	'access arguments' => array('osmap_example'),
+    'access callback' => TRUE,
+  ); */
+  $items['osmap/xml'] = array(
+    'title' => 'XML',
+    'page callback' => 'create_xml()',
+	'file' => 'osmap.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['osmap/map'] = array(
+    'title' => 'Display Map',
+    'page callback' => 'osmap_map',
+    'access callback' => TRUE,
+	'type' => MENU_LOCAL_TASK,
+    'weight' => -9,	
+ );
+ $items['osmap/table'] = array(
+    'title' => 'List',
+	'page callback' => 'osmap_map_table',
+    'access callback' => TRUE,
+	'type' => MENU_LOCAL_TASK,
+    'weight' => -8,
+  );
+  return $items;
+}
+ function osmap_map_table() {
+    $output = '';
+
+  // Get all entries in the dbtng_example table.
+  if ($entries = osmap_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id'), t('name'), t('address'), t('lat'), t('lng'), t('type'), t('title'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+ 
+ // create and put the map 
+function osmap_map()
+ {
+   $page_contents = t('MAP');
+   return '<div id="map" style="width: 500px; height: 300px"></div>';
+}
+ 

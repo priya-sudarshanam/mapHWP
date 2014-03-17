@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall functions for the osmap module.
+ */
+
+/**
+ * Implements hook_schema(). create the osmap table in drupal7 database
+ */
+function osmap_schema() {
+    $schema['osmap'] = array(
+        'description' => 'open scholar map.',
+        'fields' => array(
+		    // add field id
+            'id' => array(
+			    //'serial' for auto-increment
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => 'Primary key (id of the location)',
+            ),
+			// add field name
+            'name' => array(
+                'type' => 'varchar',
+                'length' => 60,
+                'not null' => TRUE,
+                'description' => 'Location name.',
+            ),
+			// add field address
+            'address' => array(
+                'type' => 'varchar',
+                'length' => 80,
+                'not null' => TRUE,
+                'description' => 'Location address',
+            ),
+			// add field latitude
+            'lat' => array(
+                'type' => 'float',
+                'length' => (10.6),
+                'not null' => TRUE,
+                'description' => 'Location Latitude',
+            ),
+			// add field longitude
+            'lng' => array(
+                'type' => 'float',
+                'length' => (10.6),
+                'not null' => TRUE,
+                'description' => "Location Longitude",
+             ),
+			// add field type to separate out types like business/university
+             'type' => array(
+                'type' => 'varchar',
+                'length' => 30,
+                'not null' => TRUE,
+        'description' => 'Location type, for eg business/university',
+    ),
+    ),  // declare the primary key and created the index on the same
+        'primary key' => array('id'),'indexes' => array('id'),
+    );
+   //create the schema in the database
+  return $schema;
+}
+
+/**
+ * Implements hook_install(). Adds a default site to the map: HWP
+ */
+function osmap_install() {
+    // Insert a default location on the map.
+    db_insert('osmap')
+        ->fields(array(
+            'name' => 'Harvard Web Publishing',
+            'address' => '125 Mount Auburn Street, Cambridge, MA',
+            'lat' => 42.373573,
+            'lng' => -71.122886,
+            'type' => 'university',
+        ))
+        ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * As in hook_install, there is no need to uninstall schema, Drupal will do it
+ * for us.
+ *
+ */
+function osmap_uninstall() {
+    // nothing 
+}

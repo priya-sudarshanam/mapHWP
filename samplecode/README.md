@@ -1,4 +1,4 @@
-osmap
-=====
+mapHWP
+======
 
 map module for HWP
