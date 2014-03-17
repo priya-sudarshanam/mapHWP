@@ -25,7 +25,7 @@ function OSMap_menu(){
     'access callback' => TRUE,
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
-  );
+	);
   
 	$items['OSMap/list'] = array(
     'title' => 'Address List',
@@ -33,7 +33,7 @@ function OSMap_menu(){
 	'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
     'weight' => -9,
-  );
+	);
 	
 	$items['OSMap/add'] = array(
     'title' => 'Add Address Entry',
@@ -42,8 +42,16 @@ function OSMap_menu(){
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
     'weight' => -8,
-  );
- 
+	);
+	
+	$items['OSMap/update'] = array(
+    'title' => 'update Address Entry',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('OSMap_form_update'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -7,
+	);
   
     return $items;
 }
@@ -56,8 +64,35 @@ function OSMap_page() {
     return 'This is a hello world test of OSMap';
 }
 
+// add entry
+function OSMap_entry_insert($entry) {
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('OSMap')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
+}
+
+// delete entry
+function OSMap_entry_delete() {
+  drupal_set_message('haha hello');
+}
+
 // load all the entries from the database
 function OSMap_list() {
+
+  $form['delete'] = array(
+					'#type' => 'button',
+					'#value' => t('Delete'),
+					'#attributes' => array('onclick' => ''),	  
+					);
+		
   $output = '';
 
   // Get all entries in the table.
@@ -68,9 +103,28 @@ function OSMap_list() {
       // Sanitize the data before handing it off to the theme layer.
       $rows[] = array_map('check_plain', (array) $entry);
     }
+	
+	
+	
     // Make a table for them.
     $header = array(t('Id'), t('title'), t('street'), t('city'), t('state'), t('postal_code'), t('lat'), t('lng'));
-    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+    
+	/*
+	foreach ($rows as $key=>$value) {
+		
+		$record_id = $rows[0]['Id'];
+		drupal_set_message($record_id);
+		
+		$rows[$key][] = '<input type="button" value="Delete" onclick="document.location=\'?q=OSMap/delete/ '+$record_id+' \'" />';
+		
+		 // <input type="button" value="Delete record" onclick="document.location=\'mymodule/deleterecord/'+$record_id+'\';" />
+	}
+	*/
+	
+	$output .= theme('table', array('header' => $header, 'rows' => $rows));
+	
+	
+	
   }
   else {
     drupal_set_message(t('No entries have been added yet.'));
@@ -168,20 +222,110 @@ function OSMap_form_add_submit($form, &$form_state) {
   }
 }
 
-function OSMap_entry_insert($entry) {
-  $return_value = NULL;
-  try {
-    $return_value = db_insert('OSMap')
-                    ->fields($entry)
-                    ->execute();
+// update the map
+function OSMap_form_update($form, &$form_state) {
+  $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  $entries = OSMap_entry_load();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table dbtng_example table."),
+    );
+    return $form;
   }
-  catch (Exception $e) {
-    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
-      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+
+  foreach ($entries as $entry) {
+    $options[$entry->nid] = t("@nid: @title", array('@nid' => $entry->nid, '@title' => $entry->title));
+    $keyed_entries[$entry->nid] = $entry;
   }
-  return $return_value;
+  $default_entry = !empty($form_state['values']['nid']) ? $keyed_entries[$form_state['values']['nid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['nid'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t('Choose entry to update'),
+    '#default_value' => $default_entry->nid,
+    '#ajax' => array(
+      'wrapper' => 'updateform',
+      'callback' => 'OSMap_form_update_callback',
+    ),
+  );
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated title'),
+    '#size' => 30,
+    '#default_value' => $default_entry->title,
+  );
+
+  $form['street'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated street'),
+    '#size' => 30,
+    '#default_value' => $default_entry->street,
+  );
+  
+  $form['city'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated city'),
+    '#size' => 30,
+    '#default_value' => $default_entry->city,
+    //'#description' => t("Values greater than 127 will cause an exception"),
+  );
+  
+  $form['state'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated state'),
+    '#size' => 30,
+    '#default_value' => $default_entry->state,
+  );
+  
+  
+  
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+  return $form;
 }
 
+function OSMap_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['nid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('title', 'street', 'city') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function OSMap_form_update_submit($form, &$form_state) {
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'pid' => $form_state['values']['pid'],
+    'name' => $form_state['values']['name'],
+    'surname' => $form_state['values']['surname'],
+    'age' => $form_state['values']['age'],
+    'uid' => $user->uid,
+  );
+  $count = dbtng_example_entry_update($entry);
+  drupal_set_message(t("Updated entry @entry (@count row updated)", array('@count' => $count, '@entry' => print_r($entry, TRUE))));
+}
+
+// show the map
 function OSMap_map_show(){
 
 	drupal_add_js('https://maps.googleapis.com/maps/api/js?key=AIzaSyAz4kiKnyoMKp0e8ORuqbWNZZpplrxGsGE&sensor=true', 'external');
@@ -212,9 +356,11 @@ function OSMap_map_show(){
 	
 	drupal_add_js(array ("OSMap" => $makers), 'setting');
 	
-	return '<div id="googleMap" style="width:690px;height:500px;"></div>';
+	return '<div id="googleMap" style="width:690px;height:450px;"></div>';
 			
 }
+
+
 
 
 
