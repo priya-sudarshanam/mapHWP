@@ -1,12 +1,15 @@
 
 function initialize(){
 
+	// the number of address entries
 	var len = Drupal.settings['OSMap'].length;
 	var lat;
 	var lng;
+	var title;
 	var addr;
-	var markers = new Array();
-	var infowindows = new Array();
+	//var markers = new Array();
+	//var infowindows = new Array();
+	var infowindow = new google.maps.InfoWindow();
 	
 	var mapProp = {
 		center:new google.maps.LatLng(42.394450, -71.093227),
@@ -27,13 +30,28 @@ function initialize(){
 	
 	map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
 	
+	
 	for (var i=0; i<len; i++) {
+	    
 		lat = Drupal.settings['OSMap'][i]['lat'];
 		lng = Drupal.settings['OSMap'][i]['lng'];
+		title = String(Drupal.settings['OSMap'][i]['title']);
 		addr = new google.maps.LatLng(lat,lng);
-		markers[i] = new google.maps.Marker({position:addr, 
-										animation:google.maps.Animation.DROP});
-		markers[i].setMap(map);
+		
+		var marker = new google.maps.Marker({position:addr, 
+											 map: map,
+											 title:title,
+											 animation:google.maps.Animation.DROP});
+							
+		google.maps.event.addListener(marker, 'mouseover', function() {
+							// here we should use 'this' instead of marker
+							infowindow.setContent(this.title);
+							infowindow.open(map,this);
+							});
+							
+		google.maps.event.addListener(marker, 'mouseout', function() {
+							infowindow.close(map,this);
+							});
 	}
 	
 	/*
@@ -47,7 +65,8 @@ function initialize(){
 	google.maps.event.addListener(marker1, 'mouseout', function() {
 							infowindow.close(map,marker1);
 							});
-	*/
+							*/
+	
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);

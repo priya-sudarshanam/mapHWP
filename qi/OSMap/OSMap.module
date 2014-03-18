@@ -79,6 +79,23 @@ function OSMap_entry_insert($entry) {
   return $return_value;
 }
 
+// update entry
+function OSMap_entry_update($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('OSMap')
+              ->fields($entry)
+              ->condition('nid', $entry['nid'])
+              ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
 // delete entry
 function OSMap_entry_delete() {
   drupal_set_message('haha hello');
@@ -286,9 +303,27 @@ function OSMap_form_update($form, &$form_state) {
     '#default_value' => $default_entry->state,
   );
   
+  $form['postal_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated postal code'),
+    '#size' => 30,
+    '#default_value' => $default_entry->postal_code,
+  );
   
+  $form['lat'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated lat'),
+    '#size' => 30,
+    '#default_value' => $default_entry->lat,
+  );
   
-
+  $form['lng'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated lng'),
+    '#size' => 30,
+    '#default_value' => $default_entry->lng,
+  );
+  
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Update'),
@@ -301,7 +336,7 @@ function OSMap_form_update_callback($form, $form_state) {
   // Setting the #value of items is the only way I was able to figure out
   // to get replaced defaults on these items. #default_value will not do it
   // and shouldn't.
-  foreach (array('title', 'street', 'city') as $item) {
+  foreach (array('title', 'street', 'city','state','postal_code','lat','lng') as $item) {
     $form[$item]['#value'] = $entry->$item;
   }
   return $form;
@@ -315,13 +350,17 @@ function OSMap_form_update_submit($form, &$form_state) {
 
   // Save the submitted entry.
   $entry = array(
-    'pid' => $form_state['values']['pid'],
-    'name' => $form_state['values']['name'],
-    'surname' => $form_state['values']['surname'],
-    'age' => $form_state['values']['age'],
-    'uid' => $user->uid,
+    'nid' => $form_state['values']['nid'],
+    'title' => $form_state['values']['title'],
+    'street' => $form_state['values']['street'],
+    'city' => $form_state['values']['city'],
+	'state' => $form_state['values']['state'],
+	'postal_code' => $form_state['values']['postal_code'],
+	'lat' => $form_state['values']['lat'],
+	'lng' => $form_state['values']['lng'],
+    
   );
-  $count = dbtng_example_entry_update($entry);
+  $count = OSMap_entry_update($entry);
   drupal_set_message(t("Updated entry @entry (@count row updated)", array('@count' => $count, '@entry' => print_r($entry, TRUE))));
 }
 
@@ -345,6 +384,7 @@ function OSMap_map_show(){
 			$makers[] = array_map ('check_plain', array(	
 				'lat' => $row['lat'],
 				'lng' => $row['lng'],
+				'title' => $row['title'],
 			));
 		}	
 	}
