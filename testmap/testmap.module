@@ -40,10 +40,12 @@ function testmap_menu(){
 	   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
 	 );
-	 $items['testmap/delete/%'] = array (
-	   'page callback' => 'deleteLocation',
-	   'page arguments' => array(2,3),
+	 $items['testmap/delete/%id'] = array (
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('testmap_delete_confirm', 2),
+	   'access arguments' => array('access location id'),
 	   'access callback' => TRUE,
+	   'type' => MENU_CALLBACK,
      );
 	 $items['testmap/update/%id'] = array (
 	   'title' => 'Update Location',
@@ -56,11 +58,37 @@ function testmap_menu(){
 	 
 	return $items;
 }
+
+function testmap_delete_confirm($form,&$form_state, $location){
+   $form['_location'] = array(
+      '#type' => 'value',
+	  '#value' => $location,   
+   );
+   
+   return confirm_form($form,
+     t('Are you sure you want to delete this location?'),
+	 isset($_GET['destination']) ? $_GET['destination'] : 'testmap/list',
+	 t('This action cannot be undone.'),
+	 t('Delete'),
+	 t('Cancel'));
+}
+
+function testmap_delete_confirm_submit($form, &$form_state){
+    $location = $form_state['values']['_location'];
+	if($form_state['values']['confirm']){
+	     $location = $form_state['values']['_location'];
+		 map_delete_data($location);
+		 drupal_set_message(t('Location has been deleted successfully.'));
+	
+	}
+	drupal_goto("testmap/list"); 
+}
+
 /**
  * Updates the selected location in the table = 'osmap'. 
  */
-function testmap_form_update($form, &$form_state, $variable){
-      $mapValue = map_select_data_id($variable);
+function testmap_form_update($form, &$form_state, $location_id){
+      $mapValue = map_select_data_id($location_id);
 	  $rows = array();
 	  $header = array(t('Name'),t('Address'),t('Type'));
 	  $rows[] = array(
@@ -73,7 +101,7 @@ function testmap_form_update($form, &$form_state, $variable){
 	   '#empty' => t('No users found'),
 	   '#header' => $header,
 	   '#rows' => $rows,
-	   '#id' => $variable,
+	   '#id' => $location_id,
 	   );
 	  	
     $typeOptions = type_list();  
@@ -99,25 +127,7 @@ function testmap_form_update_submit($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
       }
 }
-
-/**
- * Deletes the selected location from the table = 'osmap'. 
- * returns the user to the same page
- */ 
-function deleteLocation($id,$name){
- 	 try {
-	       $deleted = map_delete_data($id);{
-	       drupal_set_message(t('Successfully deleted location:  '.$name));		 
-           drupal_goto($_GET['destination']);
-         }
-      }	  
-	  catch (Exception $e) 
-	  {
-           drupal_set_message(t('Failed to delete location. Message = %message, query=%query', 
-	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
-	  }
- }
-  
+ 
  /**
  * creates form for taking in new location details
  */  
