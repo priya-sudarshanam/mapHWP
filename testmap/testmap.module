@@ -166,8 +166,55 @@ function testmap_form_add($form, &$form_state){
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationList(){
-   $mapValues = map_select_data();
-   return create_map_table($mapValues);
+   $header = array(
+    array('data' => 'Name',        'field' => 'name',               'sort' => 'ASC'),
+    array('data' => 'Address',        'field' => 'address'),
+    array('data' => 'Latitude',     'field' => 'lat'),
+    array('data' => 'Longitude', 'field' => 'lng'),
+	array('data' => 'Type', 'field' => 'type'),
+	array('data' => 'Edit'),
+	array('data' => 'Delete'),
+  );
+
+  # set the database table and initial SelectQuery options
+  # $select is a SelectQuery object.
+  # @see http://api.drupal.org/api/drupal/includes--database--select.inc/class/Se...
+  $select = db_select('osmap')
+              ->extend('PagerDefault')
+              ->extend('TableSort');
+
+  # get the desired fields
+  # orderByHeader is a TableSort method (http://api.drupal.org/api/drupal/includes--tablesort.inc/function/TableS...)
+  $select->fields('osmap', array('id','name', 'address', 'lat', 'lng', 'type'))
+         ->limit(5)
+         ->orderByHeader($header);
+      //   ->orderBy('last_updated', 'DESC');  # TODO this call seems to be losing to orderByHeader on page load
+
+  # execute the query
+  $results = $select->execute();
+
+  # configure the table rows, making the first column a link to our 'edit' page
+  $rows = array();
+  foreach ($results as $row) {
+    $options = array('query' => drupal_get_destination(),);
+    $rows[] = array(
+                       $row->name, 
+					   $row->address,
+					   $row->lat,
+					   $row->lng,
+					   $row->type,
+                       l(t('Delete'), "testmap/delete/".$row->id,$options),
+					   l(t('Edit'), "testmap/update/".$row->id)
+    );
+  }
+
+  $output = theme('table', array('header' => $header,
+                                 'rows' => $rows ));
+
+  # add the pager
+  $output .= theme('pager');
+
+  return $output;
  }
    
  /**
