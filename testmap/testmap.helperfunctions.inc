@@ -26,6 +26,21 @@ function id_to_arg($variable){
   
   }
  } 
+ 
+ /**
+ * Creates table header for location display. 
+ */
+ function create_table_header(){
+  return $header = array(
+					array('data' => 'Name',     'field' => 'name', 'sort' => 'ASC'),
+					array('data' => 'Address',  'field' => 'address'),
+					array('data' => 'Latitude', 'field' => 'lat'),
+					array('data' => 'Longitude', 'field' => 'lng'),
+					array('data' => 'Type', 'field' => 'type'),
+					array('data' => 'Delete'),
+					array('data' => 'Edit'),				
+				);
+}
 /**
 * Returns type list for colored markers on the map. 
 */
@@ -97,13 +112,22 @@ function return_map_values($name,$address,$type,$lat,$lng){
 /*
 * creates and returns mal values in a table
 */
-function create_map_table($mapValues){
+ function create_map_table($mapValues){
   $output ='';
   try {  
         if ($mapValues){
           $rows = array();
-	      $header = array(t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
-	      foreach ($mapValues as $mapValue){
+	    //  $header = array(t('Name'),t('Address'), t('Lat'), t('Lng'),t('Type'), t('Delete'), t('Edit'));
+	      $header = array(
+           array('data' =>'Name', 'field' => 'name', 'sort' => 'ASC'),
+		   array('data' =>'Address' , 'field' => 'address'),
+		   array('data' =>'Latitutde' , 'field' =>'lat'),
+		   array('data' =>'Longitude' , 'field' =>'lng'),
+		   array('data' =>'Type', 'field' =>'type'),   
+		   array('data' => 'Delete'),
+		   array('data' => 'Edit'),
+           );		  
+    	   foreach ($mapValues as $mapValue){
 	            $options = array('query' => drupal_get_destination(),);
                 $rows[] = array(
                        $mapValue->name, 
@@ -111,7 +135,7 @@ function create_map_table($mapValues){
 					   $mapValue->lat,
 					   $mapValue->lng,
 					   $mapValue->type,
-                       l(t('Delete'), "testmap/delete/".$mapValue->id ."/".$mapValue->name,$options),
+                       l(t('Delete'), "testmap/delete/".$mapValue->id,$options),
 					   l(t('Edit'), "testmap/update/".$mapValue->id)				   
 					   
                 );
@@ -125,4 +149,4 @@ function create_map_table($mapValues){
 	 }
 	return $output;
  
- }
+ } 
