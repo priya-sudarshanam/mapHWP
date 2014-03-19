@@ -17,15 +17,18 @@
 	return $result->fetchAll();
 	}
 
+/**
+ * Creating paging in the data table by extending 'pagerdefault' and 'sort'
+ */
 function paging_map_data(){
    $header = create_table_header();
    $table = 'osmap';
    $select = db_select($table)
+           ->fields($table, array('id','name', 'address','type'))
            ->extend('PagerDefault')
            ->extend('TableSort')
-           ->fields($table, array('id','name', 'address', 'lat', 'lng', 'type'))
-          ->limit(5)
-          ->orderByHeader($header);
+           ->limit(5)
+           ->orderByHeader($header);
    
    return $select->execute();
 
