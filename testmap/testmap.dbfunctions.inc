@@ -16,7 +16,20 @@
 	}
 	return $result->fetchAll();
 	}
-	
+
+function paging_map_data(){
+   $header = create_table_header();
+   $table = 'osmap';
+   $select = db_select($table)
+           ->extend('PagerDefault')
+           ->extend('TableSort')
+           ->fields($table, array('id','name', 'address', 'lat', 'lng', 'type'))
+          ->limit(5)
+          ->orderByHeader($header);
+   
+   return $select->execute();
+
+}
 /**
  * Retrieve data from the table = 'osmap'
  */
