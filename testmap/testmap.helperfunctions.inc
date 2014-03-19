@@ -91,16 +91,16 @@ function create_form($form, $form_type){
 	       '#value' => 'UPDATE'
 		   );
 	   } 
-  $form['reset'] = array(
-      '#type' => 'button',
-      '#button_type' => 'reset',
+	  
+	 $form['cancel'] = array(
+      '#type' => 'submit',
+    //  '#button_type' => 'reset',
       '#value' => 'CANCEL',
-  //    '#weight' => 9,
-  //    '#validate' => array(),
+      '#validate' => array(),
       '#attributes' => array(
             'onclick' => 'this.form.reset(); return false;',
           ),
-    );
+    ); 
   
 return $form;
 }
