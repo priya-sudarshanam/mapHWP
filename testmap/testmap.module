@@ -60,13 +60,18 @@ function testmap_menu(){
 }
 
 function testmap_delete_confirm($form,&$form_state, $location){
+   $location_name = map_select_data_id($location);
    $form['_location'] = array(
       '#type' => 'value',
 	  '#value' => $location,   
    );
-   
+   $form['_location_name']= array(
+      '#type' => 'value',
+	  '#value' => $location_name['name'],
+   );
+  
    return confirm_form($form,
-     t('Are you sure you want to delete this location?'),
+     t('Are you sure you want to delete location: "'.$location_name['name']. '" ?'),
 	 isset($_GET['destination']) ? $_GET['destination'] : 'testmap/list',
 	 t('This action cannot be undone.'),
 	 t('Delete'),
@@ -75,10 +80,11 @@ function testmap_delete_confirm($form,&$form_state, $location){
 
 function testmap_delete_confirm_submit($form, &$form_state){
     $location = $form_state['values']['_location'];
+	$location_name = $form_state['values']['_location_name'];
 	if($form_state['values']['confirm']){
 	     $location = $form_state['values']['_location'];
 		 map_delete_data($location);
-		 drupal_set_message(t('Location has been deleted successfully.'));
+		 drupal_set_message(t('Location "'.$location_name.'"  has been deleted successfully.'));
 	
 	}
 	drupal_goto("testmap/list"); 
@@ -154,11 +160,7 @@ function testmap_form_add($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
-	// }
-	/*  else
-	 {
-	   drupal_set_message(t("Name can only contain alpha characters and space"),'error');
-	 }    */    
+	   
  }
  
  /**
@@ -166,35 +168,10 @@ function testmap_form_add($form, &$form_state){
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationList(){
-   $header = array(
-    array('data' => 'Name',        'field' => 'name',               'sort' => 'ASC'),
-    array('data' => 'Address',        'field' => 'address'),
-    array('data' => 'Latitude',     'field' => 'lat'),
-    array('data' => 'Longitude', 'field' => 'lng'),
-	array('data' => 'Type', 'field' => 'type'),
-	array('data' => 'Edit'),
-	array('data' => 'Delete'),
-  );
-
-  # set the database table and initial SelectQuery options
-  # $select is a SelectQuery object.
-  # @see http://api.drupal.org/api/drupal/includes--database--select.inc/class/Se...
-  $select = db_select('osmap')
-              ->extend('PagerDefault')
-              ->extend('TableSort');
-
-  # get the desired fields
-  # orderByHeader is a TableSort method (http://api.drupal.org/api/drupal/includes--tablesort.inc/function/TableS...)
-  $select->fields('osmap', array('id','name', 'address', 'lat', 'lng', 'type'))
-         ->limit(5)
-         ->orderByHeader($header);
-      //   ->orderBy('last_updated', 'DESC');  # TODO this call seems to be losing to orderByHeader on page load
-
-  # execute the query
-  $results = $select->execute();
-
-  # configure the table rows, making the first column a link to our 'edit' page
   $rows = array();
+  $header = create_table_header();
+  $results = paging_map_data();
+  
   foreach ($results as $row) {
     $options = array('query' => drupal_get_destination(),);
     $rows[] = array(
@@ -208,10 +185,8 @@ function locationList(){
     );
   }
 
-  $output = theme('table', array('header' => $header,
-                                 'rows' => $rows ));
+  $output = theme('table', array('header' => $header, 'rows' => $rows ));
 
-  # add the pager
   $output .= theme('pager');
 
   return $output;
