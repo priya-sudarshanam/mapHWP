@@ -17,9 +17,9 @@ function get_latitude_longitude($add){
  */
 function id_to_arg($variable){
   if ($variable == '%') {
- 	// drupal_set_message(t('Please choose a location to update'));
-	 return 'none';
-//	 drupal_goto('testmap/list');
+     return 'none';
+ 	 drupal_set_message(t('Please choose a location to update'));
+	// drupal_goto('testmap/list');
 	}
   else {
     return $variable;
@@ -34,8 +34,6 @@ function id_to_arg($variable){
   return $header = array(
 					array('data' => 'Name',     'field' => 'name', 'sort' => 'ASC'),
 					array('data' => 'Address',  'field' => 'address'),
-					array('data' => 'Latitude', 'field' => 'lat'),
-					array('data' => 'Longitude', 'field' => 'lng'),
 					array('data' => 'Type', 'field' => 'type'),
 					array('data' => 'Delete'),
 					array('data' => 'Edit'),				
@@ -81,18 +79,28 @@ function create_form($form, $form_type){
    '#required' => TRUE,
    '#default_value' => $typeOptions['university'],
   );
-  if ($form_type == 'add'){
-    $form[$form_type]['submit'] =array (
+   if ($form_type == 'add'){
+    $form['submit'] =array (
        '#type' => 'submit',
 	   '#value' => 'ADD'
 	   );
 	 }
 	else {
-	   $form[$form_type]['submit'] =array (
+	   $form['submit'] =array (
            '#type' => 'submit',
-	       '#value' => 'Update'
+	       '#value' => 'UPDATE'
 		   );
 	   } 
+  $form['reset'] = array(
+      '#type' => 'button',
+      '#button_type' => 'reset',
+      '#value' => 'CANCEL',
+      '#weight' => 9,
+      '#validate' => array(),
+      '#attributes' => array(
+            'onclick' => 'this.form.reset(); return false;',
+          ),
+    );
   
 return $form;
 }
