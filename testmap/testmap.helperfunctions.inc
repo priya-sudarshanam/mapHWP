@@ -32,9 +32,9 @@ function id_to_arg($variable){
  */
  function create_table_header(){
   return $header = array(
-					array('data' => 'Name',     'field' => 'name', 'sort' => 'ASC'),
+					array('data' => 'Name',     'field' => 'name', 'sort' => 'asc'),
 					array('data' => 'Address',  'field' => 'address'),
-					array('data' => 'Type', 'field' => 'type'),
+					array('data' => 'Type', 'field' => 'type', 'sort' => 'asc'),
 					array('data' => 'Delete'),
 					array('data' => 'Edit'),				
 				);
@@ -95,8 +95,8 @@ function create_form($form, $form_type){
       '#type' => 'button',
       '#button_type' => 'reset',
       '#value' => 'CANCEL',
-      '#weight' => 9,
-      '#validate' => array(),
+  //    '#weight' => 9,
+  //    '#validate' => array(),
       '#attributes' => array(
             'onclick' => 'this.form.reset(); return false;',
           ),
