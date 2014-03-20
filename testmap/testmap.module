@@ -1,15 +1,21 @@
 <?php
-/* requiring files which contain dbfunctions and helper functions */
 
+/**
+ * @file
+ * @TODO Add module file summary.
+ *
+ * Tip: print_r formatted version of the array and var_dump but with more
+ * detail.
+ */
+
+/**
+ * Requiring files which contain dbfunctions and helper functions.
+ */
 require_once ('testmap.dbfunctions.inc');
 require_once ('testmap.helperfunctions.inc');
 
-/* tips
-* print_r formatted version of the array and var_dump but with more detail
-*/
-
 /**
- * hook_menu for map
+ * Implements hook_menu().
  */
 function testmap_menu() {
 
@@ -59,6 +65,9 @@ function testmap_menu() {
   return $items;
 }
 
+/**
+ * @TODO: Add function summary.
+ */
 function testmap_delete_confirm($form, &$form_state, $location) {
   $location_name = map_select_data_id($location);
   $form['_location'] = array(
@@ -79,6 +88,9 @@ function testmap_delete_confirm($form, &$form_state, $location) {
   );
 }
 
+/**
+ * @TODO: Add function summary.
+ */
 function testmap_delete_confirm_submit($form, &$form_state) {
   $location = $form_state['values']['_location'];
   $location_name = $form_state['values']['_location_name'];
@@ -89,7 +101,7 @@ function testmap_delete_confirm_submit($form, &$form_state) {
       drupal_set_message(t('Location "' . $location_name . '"  has been deleted successfully.'));
     }
   }
-  catch(Exception$e) {
+  catch(Exception $e) {
     drupal_set_message(t('Location "' . $location_name . '" could not be deleted. Message = %message, query=%query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)
       ), 'error');
@@ -123,7 +135,7 @@ function testmap_form_update($form, &$form_state, $location_id) {
 }
 
 /**
- * update submit form
+ * Updates submit form.
  */
 function testmap_form_update_submit($form, &$form_state) {
   $updatingId = ($form['table']['#id']);
@@ -137,7 +149,7 @@ function testmap_form_update_submit($form, &$form_state) {
         array('@count' => $count, '@mapValue' => print_r($mapValues['name'], TRUE))
       ));
   }
-  catch(Exception$e) {
+  catch(Exception $e) {
     drupal_set_message(t('Failed to update location. Message = %message, query=%query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)
       ), 'error');
@@ -145,14 +157,14 @@ function testmap_form_update_submit($form, &$form_state) {
 }
 
 /**
- * creates form for taking in new location details
+ * Creates form for taking in new location details.
  */
 function testmap_form_add($form, &$form_state) {
   return create_form($form, 'add');
 }
 
 /**
- * adds new location details to the table = 'osmap'
+ * Adds new location details to the table = 'osmap'.
  */
 function testmap_form_add_submit($form, &$form_state) {
   $lat_lng = get_latitude_longitude($form_state['values']['address']);
@@ -163,7 +175,7 @@ function testmap_form_add_submit($form, &$form_state) {
     $returnValue = map_insert_data($mapValues);
     drupal_set_message(t('Successfully added new location: ' . $mapValues['name']));
   }
-  catch(Exception$e) {
+  catch(Exception $e) {
     drupal_set_message(t('Insert of location: "' . $mapValues['name'] . '" failed. Message = %message, query=%query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)
       ), 'error');
@@ -171,8 +183,11 @@ function testmap_form_add_submit($form, &$form_state) {
 }
 
 /**
- * Displays values of the location in a table. For eg: name, address and type of the location
- * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
+ * Displays values of the location in a table.
+ *
+ * Example: name, address and type of the location
+ * $mapValues retrieves the data from 'osmap' table and displays it in drupal
+ * table.
  */
 function locationList() {
   $rows = array();
@@ -199,7 +214,8 @@ function locationList() {
 }
 
 /**
- * display the map with all the locations present in the table
+ * Displays the map with all the locations present in the table.
+ *
  * #markup -> displays a google map in the div
  * #js -> attaches two js files, one external and one internal
  * $mapValues are sent via settings feature in drupal 7
@@ -224,11 +240,10 @@ function mapShow() {
       ),
     );
   }
-  catch(Exception$e) {
+  catch(Exception $e) {
     drupal_set_message(t('Error in displaying map. Message = %message, query=%query',
         array('%message' => $e->getMessage(), '%query' => $e->query_string)
       ), 'error');
   }
   return $build;
 }
-
