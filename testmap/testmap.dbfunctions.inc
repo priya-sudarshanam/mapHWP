@@ -57,7 +57,7 @@ function paging_map_data(){
 			       ->fetchAssoc();
 	}
 	catch(Exception $e)	{
-	     drupal_set_message(t('Issue in retrieving the location data for location id= '.$id'. Message = %message, query=%query', 
+	     drupal_set_message(t('Issue in retrieving the location data for location id= '.$id.'. Message = %message, query=%query', 
 	           array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 	}
 	return $selected;
@@ -94,7 +94,7 @@ function map_update_data($mapValues,$id){
 			    ->execute();  
   }
   catch (Exception $e){
-     drupal_set_message(t('Issue in updating the location information  with location id:'.$id' . Message = %message, query=%query', 
+     drupal_set_message(t('Issue in updating the location information  with location id:'.$id.' . Message = %message, query=%query', 
 	 array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
   }
   return $updated;
