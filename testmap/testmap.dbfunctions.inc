@@ -1,4 +1,5 @@
 <?php
+
 /**
 * This file is for database functions like retrieving, 
 * adding, deleting functions
@@ -47,7 +48,7 @@ function paging_map_data(){
 /**
  * Retrieve data from the table('osmap') for a given id
  */
- function map_select_data_id($id){
+function map_select_data_id($id){
     $table = 'osmap';
 	try {
          $selected = db_select('osmap','os')
@@ -63,22 +64,20 @@ function paging_map_data(){
 	return $selected;
 }
 	
-
 /**
  * Insert new location values into the table
  */
-function map_insert_data($mapValues){
+function map_insert_data($mapValues) {
   $dataInsert = NULL;
   $table = 'osmap';
   
   try {
-        $dataInsert = db_insert($table)
-	                ->fields($mapValues)
-					->execute();
-     }
-  catch(Exception $e) {
-        drupal_set_message(t('Adding the new location failed. Message = %message, query=%query', 
-	    array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+      $dataInsert = db_insert($table)->fields($mapValues)->execute();
+    }
+  catch(Exception$e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query=%query',
+        array('%message' => $e->getMessage(), '%query' => $e->query_string)
+      ), 'error');
   }
   return $dataInsert;
 }
@@ -86,17 +85,15 @@ function map_insert_data($mapValues){
 /**
  * Update location values in the table for the given location id
  */
-function map_update_data($mapValues,$id){
+function map_update_data($mapValues, $id) {
   try {
-       $updated = db_update('osmap')
-	            ->fields($mapValues)
-	  		    ->condition('id',$id)
-			    ->execute();  
+        $updated = db_update('osmap')->fields($mapValues)->condition('id', $id)->execute();
   }
-  catch (Exception $e){
-     drupal_set_message(t('Issue in updating the location information  with location id:'.$id.' . Message = %message, query=%query', 
-	 array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
-  }
+  catch(Exception$e) {
+    drupal_set_message(t('db_update failed. Message = %message, query=%query',
+        array('%message' => $e->getMessage(), '%query' => $e->query_string)
+      ), 'error');
+    }
   return $updated;
 }
 
@@ -115,3 +112,5 @@ function map_delete_data($id){
 	   }
 	return $success;
  }
+
+
