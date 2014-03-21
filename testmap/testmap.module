@@ -48,9 +48,7 @@ function testmap_menu(){
 	   'type' => MENU_CALLBACK,
      );
 	 $items['testmap/update/%id'] = array (
-//	   'title' => 'Update Location',
 	   'type' => MENU_CALLBACK,
-//	   'weight' => -7,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_update',2),
 	   'access callback' => TRUE,
@@ -116,8 +114,7 @@ function testmap_form_update($form, &$form_state, $location_id){
 	   '#id' => $location_id,
 	   );
 	  	
-   // $typeOptions = type_list();  
-	
+
 	return create_form($form, 'update');
 }
 /**
