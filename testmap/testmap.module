@@ -33,9 +33,9 @@ function testmap_menu(){
 	   'access callback' => TRUE,
 	 );
 	 $items['testmap/add'] = array (
-	   'title' => 'Add New Location',
-	   'type' => MENU_LOCAL_TASK,
-	   'weight' => -8,
+	 //  'title' => 'Add New Location',
+	   'type' => MENU_CALLBACK,
+	//   'weight' => -8,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
@@ -48,7 +48,9 @@ function testmap_menu(){
 	   'type' => MENU_CALLBACK,
      );
 	 $items['testmap/update/%id'] = array (
+//	   'title' => 'Update Location',
 	   'type' => MENU_CALLBACK,
+//	   'weight' => -7,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_update',2),
 	   'access callback' => TRUE,
@@ -114,7 +116,8 @@ function testmap_form_update($form, &$form_state, $location_id){
 	   '#id' => $location_id,
 	   );
 	  	
-
+   // $typeOptions = type_list();  
+	
 	return create_form($form, 'update');
 }
 /**
@@ -162,7 +165,7 @@ function testmap_form_add($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
-	   
+	   drupal_goto("testmap/list"); 
  }
  
  /**
@@ -170,7 +173,8 @@ function testmap_form_add($form, &$form_state){
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationList(){
-  $rows = array();
+  $output = array();
+  
   $header = create_table_header();
   $results = paging_map_data();
   
@@ -183,13 +187,15 @@ function locationList(){
                        l(t('Delete'), "testmap/delete/".$row->id,$options),
 					   l(t('Edit'), "testmap/update/".$row->id)
     );
-  }
-
-  $output = theme('table', array('header' => $header, 'rows' => $rows ));
+  };
+  
+  $output = (l(t('Add New Location'), "testmap/add"));
+  $output .= theme('table', array('header' => $header, 'rows' => $rows ));
 
   $output .= theme('pager');
-
+  
   return $output;
+  
  }
    
  /**
