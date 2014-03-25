@@ -41,13 +41,17 @@ function testmap_menu(){
 	   'page arguments' => array('testmap_form_add'),
 	   'access callback' => TRUE,
 	 );
-	 $items['testmap/delete/%id'] = array (
-	   'page callback' => 'drupal_get_form',
-	   'page arguments' => array('testmap_delete_confirm', 2),
+	 $items['testmap/delete/nojs/%'] = array (
+	   'page callback' => 'delete_location',
+	   'page arguments' => array(2,3),
 	   'access arguments' => array('access location id'),
 	   'access callback' => TRUE,
 	   'type' => MENU_CALLBACK,
      );
+	 $items['testmap/delete/ajax/%'] = array (
+       'delivery callback' => 'ajax_deliver',
+	    ) + $items['testmap/delete/nojs/%'];
+  
 	 $items['testmap/update/%id'] = array (
 	   'type' => MENU_CALLBACK,
 	   'page callback' => 'drupal_get_form',
@@ -58,6 +62,37 @@ function testmap_menu(){
 	return $items;
 }
 
+function delete_location($ajax, $id){
+  $is_ajax = $ajax === 'ajax';
+  
+  /* db_delete('osmap')
+    ->condition('id', $id)
+    ->execute(); */
+	
+ $success = map_delete_data($id);
+ if ($success){
+  if ($is_ajax){
+     $commands = array();
+	 
+	 $commands[] = ajax_command_remove($id);
+	 return array(
+	  '#type' => 'ajax',
+	  '#commands' => $commands,
+	  
+	 );
+  $commands[] = ajax_command_remove('#messages');
+  $commands[] = ajax_command_after('#header-region', '<div id="messages">' . theme('status_messages') . '</div>');	 
+	 }
+	
+  else {
+      drupal_set_message(t('Deleted 1 location'));
+	  drupal_goto();
+   }
+  }
+  else {
+    drupal_set_message($success);
+  }
+  }
 function testmap_delete_confirm($form,&$form_state, $location){
    $location_name = map_select_data_id($location);
    $form['_location'] = array(
@@ -144,7 +179,7 @@ function testmap_form_update_submit($form, &$form_state){
  * creates form for taking in new location details
  */  
 function testmap_form_add($form, &$form_state){
-    return create_form($form, 'add');
+        return create_form($form, 'add');
  }
  /**
  * adds new location details to the table = 'osmap'
@@ -172,22 +207,36 @@ function testmap_form_add($form, &$form_state){
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationsList_form($form, $form_state){
+ drupal_add_library('system' , 'drupal.ajax');
  $header = create_table_header();
  $form = array(
    '#prefix' => '<div id="locationlist">',
     '#suffix' => '</div>',
  );
+ 
+  $rows =array();
   $map_data = paging_map_data();
-  foreach($map_data as $result) {
-     $options = array('query' => drupal_get_destination(),);
+  if ($map_data){
+    foreach($map_data as $result) {
+     $query = drupal_get_destination();
      $rows[] = array(
 	  '#name' =>$result->name,
 	  '#address' => $result->address,
 	  '#type' => $result->type,
-	  '#delete'=> l(t('Delete'), "testmap/delete/".$result->id,$options),
-	  '#edit' => l(t('Edit'),"testmap/update/".$result->id )
+	  '#delete'=> l(t('Delete'), "testmap/delete/nojs/".$result->id,
+	    array('#attributes' => array
+		       ('#ajax' => array
+			       ('effect' => 'fade', 
+				    'progress' => array(
+					   'type' => 'none'),),), 'query' => $query)),
+	  '#edit' => l(t('Edit'),"testmap/update/".$result->id)
 	  );
   };
+  }
+  else {
+   drupal_set_message("No locations in the table");
+  };
+      
   $form['add'] = array(
   '#type' => 'link',
   '#title' => 'Add New Location',
@@ -198,6 +247,7 @@ function locationsList_form($form, $form_state){
    '#theme' => 'table',
    '#header' => $header,
    '#rows' => $rows,
+ //  '#empty' => t('No locations entered in the table'),
    '#title' => 'Locations list',
    '#ajax' => array(
      'wrapper' => 'locationlist',
