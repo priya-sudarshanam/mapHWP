@@ -26,10 +26,11 @@ function testmap_menu(){
 		'weight' => -10,
     );	
      $items['testmap/list'] =array(
-	   'title' => 'Locations List, Delete & Edit',
+	   'title' => 'Locations List, Add, Delete & Edit',
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -9,
-	   'page callback' => 'locationList',
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('locationsList_form'),
 	   'access callback' => TRUE,
 	 );
 	 $items['testmap/add'] = array (
@@ -48,9 +49,7 @@ function testmap_menu(){
 	   'type' => MENU_CALLBACK,
      );
 	 $items['testmap/update/%id'] = array (
-//	   'title' => 'Update Location',
 	   'type' => MENU_CALLBACK,
-//	   'weight' => -7,
 	   'page callback' => 'drupal_get_form',
 	   'page arguments' => array('testmap_form_update',2),
 	   'access callback' => TRUE,
@@ -172,31 +171,43 @@ function testmap_form_add($form, &$form_state){
  * Displays values of the location in a table. For eg: name, address and type of the location
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
-function locationList(){
-  $output = array();
-  
-  $header = create_table_header();
-  $results = paging_map_data();
-  
-  foreach ($results as $row) {
-    $options = array('query' => drupal_get_destination(),);
-    $rows[] = array(
-                       $row->name, 
-					   $row->address,
-					   $row->type,
-                       l(t('Delete'), "testmap/delete/".$row->id,$options),
-					   l(t('Edit'), "testmap/update/".$row->id)
-    );
+function locationsList_form($form, $form_state){
+ $header = create_table_header();
+ $form = array(
+   '#prefix' => '<div id="locationlist">',
+    '#suffix' => '</div>',
+ );
+  $map_data = paging_map_data();
+  foreach($map_data as $result) {
+     $options = array('query' => drupal_get_destination(),);
+     $rows[] = array(
+	  '#name' =>$result->name,
+	  '#address' => $result->address,
+	  '#type' => $result->type,
+	  '#delete'=> l(t('Delete'), "testmap/delete/".$result->id,$options),
+	  '#edit' => l(t('Edit'),"testmap/update/".$result->id )
+	  );
   };
+  $form['add'] = array(
+  '#type' => 'link',
+  '#title' => 'Add New Location',
+  '#href' => 'testmap/add'
+  );
   
-  $output = (l(t('Add New Location'), "testmap/add"));
-  $output .= theme('table', array('header' => $header, 'rows' => $rows ));
-
-  $output .= theme('pager');
+  $form['locations'] = array(
+   '#theme' => 'table',
+   '#header' => $header,
+   '#rows' => $rows,
+   '#title' => 'Locations list',
+   '#ajax' => array(
+     'wrapper' => 'locationlist',
+//	 'callback' => 'location_form_list_callback',   
+   ),
+  );
   
-  return $output;
-  
- }
+  return $form;
+}
+ 
    
  /**
  * display the map with all the locations present in the table
