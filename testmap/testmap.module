@@ -46,10 +46,10 @@ function testmap_menu(){
 	   'access callback' => TRUE,
 	   'type' => MENU_CALLBACK,
      );
-	/*  $items['testmap/delete/ajax/%'] = array (
+	  $items['testmap/delete/ajax/%'] = array (
        'delivery callback' => 'ajax_deliver',
 	    ) + $items['testmap/delete/nojs/%'];
-   */
+   
 	 $items['testmap/update/%id'] = array (
 	   'type' => MENU_CALLBACK,
 	   'page callback' => 'drupal_get_form',
@@ -61,11 +61,10 @@ function testmap_menu(){
 }
 
 function delete_location($ajax, $id){
+    if (drupal_get_form('testmap_delete_confirm',$id)){
       $success = map_delete_data($id);
       if ($success){
         if ($ajax === 'ajax'){
-	 
-      
 	 			$commands = array();
 	 			  $commands[] = ajax_command_remove($id);
 				  return array(
@@ -85,29 +84,19 @@ function delete_location($ajax, $id){
     drupal_set_message($success);
    }
   }
+ }  
   
   
-  
-/* function testmap_delete_confirm($form,&$form_state, $location){
-   $location_name = map_select_data_id($location);
-   $form['_location'] = array(
-      '#type' => 'value',
-	  '#value' => $location,   
-   );
-   $form['_location_name']= array(
-      '#type' => 'value',
-	  '#value' => $location_name['name'],
-   );
-  
+ function testmap_delete_confirm($form,&$form_state, $id){
    return confirm_form($form,
-     t('Are you sure you want to delete location: "'.$location_name['name']. '" ?'),
+     t('Are you sure you want to delete location ?'),
 	 isset($_GET['destination']) ? $_GET['destination'] : 'testmap/list',
 	 t('This action cannot be undone.'),
 	 t('Delete'),
 	 t('Cancel'));
 }
 
-function testmap_delete_confirm_submit($form, &$form_state){
+/*function testmap_delete_confirm_submit($form, &$form_state){
     $location = $form_state['values']['_location'];
 	$location_name = $form_state['values']['_location_name'];
 	try {
@@ -203,34 +192,34 @@ function testmap_form_add($form, &$form_state){
  */
 function locationsList_form($form, $form_state){
  drupal_add_library('system' , 'drupal.ajax');
+ drupal_add_js('testmap/testmap2.js', 'file');
+ 
  $header = create_table_header();
  $form = array(
    '#prefix' => '<div id="locationlist">',
     '#suffix' => '</div>',
- );
+	);
  
   $rows =array();
   $map_data = paging_map_data();
   foreach($map_data as $result) {
-     $query = drupal_get_destination();
+   //$setting = 'id' => $result->id); 
+	// drupal_add_js(array('mymodule' => $settings), 'setting'); 
      $rows[] = array(
 	  '#name' =>$result->name,
 	  '#address' => $result->address,
 	  '#type' => $result->type,
 	  '#delete'=> l(t('Delete'), "testmap/delete/nojs/".$result->id,
-	    array('#attributes' => array
-		       ('#ajax' => array ('effect' => 'fade',
-				    'progress' => array(
-					   'type' => 'none'),),
-			    '#id' => 'delete',
-               	'#attached' => array (
-       'js' => drupal_get_path ('module', 'testmap') . '/testmap2.js' ,),
-				), 'query' => $query)),
+	     array('attributes' => array
+		        ('onClick' => 'if(!confirm("Really Delete?")){return false;}',
+			  //  '#ajax' => array ('effect' => 'fade','progress' => array('type' => 'none'),),	   
+			    
+				), 'query' => drupal_get_destination())),
 	  '#edit' => l(t('Edit'),"testmap/update/".$result->id)
 	  );
   };
   
-      
+    
   $form['add'] = array(
   '#type' => 'link',
   '#title' => 'Add New Location',
