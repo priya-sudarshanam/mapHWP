@@ -221,8 +221,20 @@ function update_location($form, &$form_state, $nid) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Update'),
+	'#submit' => array('update_location_submit'),
   );
+  
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+	'#submit' => array('update_location_cancel'),
+  );
+  
   return $form;
+}
+
+function update_location_cancel($form, &$form_state) {
+	drupal_goto("OSMap/table");
 }
 
 function update_location_submit($form, &$form_state) {
