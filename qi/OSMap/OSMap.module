@@ -45,12 +45,29 @@ function OSMap_menu(){
 	);
 	
 	$items['OSMap/update'] = array(
-    'title' => 'update Address Entry',
+    'title' => 'Update Address Entry',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('OSMap_form_update'),
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
     'weight' => -7,
+	);
+	
+	$items['OSMap/table'] = array(
+    'title' => 'Form Table',
+	'page callback' => 'drupal_get_form',
+    'page arguments' => array('OSMap_form_table'),
+	'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -6,
+	);
+	
+	$items['OSMap/delete/%'] = array(
+	   'page callback' => 'delete_location',
+	   'page arguments' => array(2,3),
+	   'access arguments' => array('access location id'),
+	   'access callback' => TRUE,
+	   'type' => MENU_CALLBACK,
 	);
   
     return $items;
@@ -95,20 +112,102 @@ function OSMap_entry_update($entry) {
   return $count;
 }
 
+//
+function delete_location($nid) {
+
+
+	$result = OSMap_entry_delete($nid);
+	if ($result) {
+		drupal_set_message("delete entry: ".$nid);
+		drupal_goto("OSMap/table");
+	}
+}
+
 
 // delete entry
-function OSMap_entry_delete() {
-  drupal_set_message('haha hello');
+function OSMap_entry_delete($nid) {
+  try {
+    $return_value = db_delete('OSMap')
+                    ->condition('nid', $nid)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_delete failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
 }
+
+// add a new entry
+function OSMap_form_table($form, &$form_state) {
+
+	drupal_add_library('system' , 'drupal.ajax');
+	$header = array(
+				array('data' => 'ID'),
+				array('data' => 'Title'),
+				array('data' => 'Street'),
+				array('data' => 'City'),
+				array('data' => 'State'),
+				array('data' => 'Postal_Code'),
+				array('data' => 'Latitude'),
+				array('data' => 'Longitude'),
+				array('data' => 'Delete'),
+				array('data' => 'Edit'),
+	);
+	
+	$form = array(
+			'#prefix' => '<div id="form_table">',
+			'#suffix' => '</div>',);
+			
+	$map_data = OSMap_entry_load();
+	
+	foreach($map_data as $result) {
+		//$options = array('query' => drupal_get_destination(),);
+		$rows[] = array(
+					'#nid' =>$result->nid,
+					'#title' =>$result->title,
+					'#street' =>$result->street,
+					'#city' =>$result->city,
+					'#state' =>$result->state,
+					'#postal_code' =>$result->postal_code,
+					'#lat' =>$result->lat,
+					'#lng' =>$result->lng,
+					'#delete'=> l(t('Delete'), "OSMap/delete/".$result->nid,
+								array(
+								//'attributes' => array('onClick' => 'if(!confirm("Really Delete?")){return false;}',
+			  //  '#ajax' => array ('effect' => 'fade','progress' => array('type' => 'none'),),	   
+			    
+									//), 
+									'query' => drupal_get_destination())),
+					'#edit' => l(t('Edit'),"testmap/update/".$result->nid )
+				);
+		
+	};
+	  
+	$form['add'] = array(
+						'#type' => 'link',
+						'#title' => 'Add New Location',
+						'#href' => 'testmap/add'
+	);
+	
+	$form['locations'] = array(
+							'#theme' => 'table',
+							'#header' => $header,
+							'#rows' => $rows,
+							'#empty' => t('No locations entered in the table'),
+							'#title' => 'Locations list',
+							'#ajax' => array(
+							'wrapper' => 'form_table',
+					 //	 'callback' => 'location_form_list_callback',   
+							),
+  );
+	
+	return $form;
+}
+
 
 // load all the entries from the database
 function OSMap_list() {
-
-  $form['delete'] = array(
-					'#type' => 'button',
-					'#value' => t('Delete'),
-					'#attributes' => array('onclick' => ''),	  
-					);
 		
   $output = '';
 
@@ -120,8 +219,6 @@ function OSMap_list() {
       // Sanitize the data before handing it off to the theme layer.
       $rows[] = array_map('check_plain', (array) $entry);
     }
-	
-	
 	
     // Make a table for them.
     $header = array(t('Id'), t('title'), t('street'), t('city'), t('state'), t('postal_code'), t('lat'), t('lng'));

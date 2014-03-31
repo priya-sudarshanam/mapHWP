@@ -20,7 +20,7 @@ function initialize(){
 		disableDefaultUI: true,
 		
 		// prevents map from being dragged
-        draggable: false,
+        draggable: true,
 		
 		// prevents map from being double click zoomed
 		disableDoubleClickZoom: true,
@@ -51,6 +51,12 @@ function initialize(){
 							
 		google.maps.event.addListener(marker, 'mouseout', function() {
 							infowindow.close(map,this);
+							});
+		
+		google.maps.event.addListener(marker, 'click', function() {
+							// here we should use 'this' instead of marker
+							var latLng = this.getPosition(); 
+							map.panTo(latLng);
 							});
 	}
 	
