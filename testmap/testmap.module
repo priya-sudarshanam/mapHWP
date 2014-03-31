@@ -71,10 +71,11 @@ function update_location($ajax, $id){
 function delete_location($ajax, $id){
     //  drupal_add_library('system' , 'drupal.ajax');
 	    ctools_include('ajax');
-       $success = map_delete_data($id);
-       $commands = array();
+	   $success = map_delete_data($id);
+	   $commands = array();
        $commands[] = ajax_command_remove("tr.location-row-$id");
        $commands[] = ajax_command_restripe("table.locations-table");
+	   
        print ajax_render($commands);
        exit;
   }
@@ -161,31 +162,25 @@ function locationsList_form($form, $form_state){
  ctools_include('ajax');
   
   $header = create_table_header();
-  $addlink = array( 
-   'add' => array(
-   'title' =>'Add New Location', 'href' => 'testmap/add')
-  );
-  $rows =array();
-  $output = array();
+   $rows =array();
    
-  $map_data = paging_map_data();
+   $map_data = paging_map_data();
   foreach($map_data as $result) {
      $rows[] = array(
-	   'class' => array('location-row-'. $result->id),
+	   'class' => array('location-row' => 'location-row-'. $result->id),
        'data' => array(
         $result->name,
 		$result->address,
 		$result->type,
 	    ctools_ajax_text_button("remove", "testmap/delete/nojs/".$result->id, t('Delete this row')),
 		ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, t('Update this row')),
+		
+
       ),
 	  ); 
-  }
-  
-  
-  $output .= theme('links', array('links' => $addlink));
-  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'class' => 'locations-table'));
-
+  } 
+   
+  $output =  theme('table', array('header' => $header, 'rows' => $rows, 'class' => 'locations-table'));
    $build = array(
     'markup' => array(
 	   '#markup' => $output));
