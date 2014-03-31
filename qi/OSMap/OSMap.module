@@ -62,9 +62,17 @@ function OSMap_menu(){
     'weight' => -6,
 	);
 	
-	$items['OSMap/delete/%'] = array(
+	$items['OSMap/table_delete/%'] = array(
 	   'page callback' => 'delete_location',
 	   'page arguments' => array(2,3),
+	   'access arguments' => array('access location id'),
+	   'access callback' => TRUE,
+	   'type' => MENU_CALLBACK,
+	);
+	
+	$items['OSMap/table_update/%'] = array(
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('update_location',2),
 	   'access arguments' => array('access location id'),
 	   'access callback' => TRUE,
 	   'type' => MENU_CALLBACK,
@@ -100,6 +108,7 @@ function OSMap_entry_insert($entry) {
 function OSMap_entry_update($entry) {
   try {
     // db_update()...->execute() returns the number of rows updated.
+	 drupal_set_message($entry['state']);
     $count = db_update('OSMap')
               ->fields($entry)
               ->condition('nid', $entry['nid'])
@@ -138,6 +147,104 @@ function OSMap_entry_delete($nid) {
   return $return_value;
 }
 
+// table form update
+function update_location($form, &$form_state, $nid) {
+	
+	
+  $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  
+  $entries = OSMap_entry_load_byID($nid);
+
+  foreach ($entries as $entry) {
+    $options[$entry->nid] = t("@nid: @title", array('@nid' => $entry->nid, '@title' => $entry->title));
+  }
+
+  $form['nid'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $entry->nid,
+  );
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated title'),
+    '#size' => 30,
+    '#default_value' => $entry->title,
+  );
+
+  $form['street'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated street'),
+    '#size' => 30,
+    '#default_value' => $entry->street,
+  );
+  
+  $form['city'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated city'),
+    '#size' => 30,
+    '#default_value' => $entry->city,
+    //'#description' => t("Values greater than 127 will cause an exception"),
+  );
+  
+  $form['state'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated state'),
+    '#size' => 30,
+    '#default_value' => $entry->state,
+  );
+  
+  $form['postal_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated postal code'),
+    '#size' => 30,
+    '#default_value' => $entry->postal_code,
+  );
+  
+  $form['lat'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated lat'),
+    '#size' => 30,
+    '#default_value' => $entry->lat,
+  );
+  
+  $form['lng'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Updated lng'),
+    '#size' => 30,
+    '#default_value' => $entry->lng,
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+  return $form;
+}
+
+function update_location_submit($form, &$form_state) {
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'nid' => $form_state['values']['nid'],
+    'title' => $form_state['values']['title'],
+    'street' => $form_state['values']['street'],
+    'city' => $form_state['values']['city'],
+	'state' => $form_state['values']['state'],
+	'postal_code' => $form_state['values']['postal_code'],
+	'lat' => $form_state['values']['lat'],
+	'lng' => $form_state['values']['lng'],  
+  );
+  
+  $count = OSMap_entry_update($entry);
+  drupal_set_message(t("Updated entry @entry (@count row updated)", array('@count' => $count, '@entry' => print_r($entry, TRUE))));
+  drupal_goto("OSMap/table");
+}
+
 // add a new entry
 function OSMap_form_table($form, &$form_state) {
 
@@ -172,14 +279,14 @@ function OSMap_form_table($form, &$form_state) {
 					'#postal_code' =>$result->postal_code,
 					'#lat' =>$result->lat,
 					'#lng' =>$result->lng,
-					'#delete'=> l(t('Delete'), "OSMap/delete/".$result->nid,
+					'#delete'=> l(t('Delete'), "OSMap/table_delete/".$result->nid,
 								array(
 								//'attributes' => array('onClick' => 'if(!confirm("Really Delete?")){return false;}',
 			  //  '#ajax' => array ('effect' => 'fade','progress' => array('type' => 'none'),),	   
 			    
 									//), 
 									'query' => drupal_get_destination())),
-					'#edit' => l(t('Edit'),"testmap/update/".$result->nid )
+					'#edit' => l(t('Edit'),"OSMap/table_update/".$result->nid )
 				);
 		
 	};
@@ -259,6 +366,18 @@ function OSMap_entry_load() {
   }
   // Return the result in object format.
   return $select->execute()->fetchAll();
+}
+
+// load the entry with a given id
+function OSMap_entry_load_byID($nid) {
+  try {
+    $return_value = db_query("SELECT * from {OSMap} n where n.nid = :nid", array(':nid' => $nid));
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_select failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
 }
 
 // add a new entry
@@ -442,6 +561,7 @@ function OSMap_form_update_callback($form, $form_state) {
 /**
  * Submit handler for 'update entry' form.
  */
+
 function OSMap_form_update_submit($form, &$form_state) {
   global $user;
 
