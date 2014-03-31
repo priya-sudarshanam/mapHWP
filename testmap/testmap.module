@@ -45,75 +45,40 @@ function testmap_menu(){
 	   'access arguments' => array('access location id'),
 	   'access callback' => TRUE,
 	   'type' => MENU_CALLBACK,
+	   'delivery callback' => 'ajax_deliver',
      );
-	  $items['testmap/delete/ajax/%'] = array (
+	   $items['testmap/delete/ajax/%'] = array (
        'delivery callback' => 'ajax_deliver',
-	    ) + $items['testmap/delete/nojs/%'];
+	    ) + $items['testmap/delete/nojs/%']; 
    
-	 $items['testmap/update/%id'] = array (
+	 $items['testmap/update/nojs/%'] = array (
 	   'type' => MENU_CALLBACK,
-	   'page callback' => 'drupal_get_form',
-	   'page arguments' => array('testmap_form_update',2),
+	   'page callback' => 'update_location',
+	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
+	   'access arguments' => array('access location id'),
 	 );
 	 
 	return $items;
 }
 
-function delete_location($ajax, $id){
-    if (drupal_get_form('testmap_delete_confirm',$id)){
-      $success = map_delete_data($id);
-      if ($success){
-        if ($ajax === 'ajax'){
-	 			$commands = array();
-	 			  $commands[] = ajax_command_remove($id);
-				  return array(
-				   '#type' => 'ajax',
-				   '#commands' => $commands,
-				   );
-				  
-				  $commands[] = ajax_command_remove('#messages');
-				  
-				  $commands[] = ajax_command_after('#header-region', '<div id="messages">' . theme('status_messages') . '</div>');	} 
-      else {
-      drupal_set_message(t('Deleted 1 location'));
-	  drupal_goto();
-   }
-  }
-  else {
-    drupal_set_message($success);
-   }
-  }
- }  
-  
-  
- function testmap_delete_confirm($form,&$form_state, $id){
-   return confirm_form($form,
-     t('Are you sure you want to delete location ?'),
-	 isset($_GET['destination']) ? $_GET['destination'] : 'testmap/list',
-	 t('This action cannot be undone.'),
-	 t('Delete'),
-	 t('Cancel'));
+function update_location($ajax, $id){
+   $form = array();
+   return create_form($form, 'update');
+
 }
 
-/*function testmap_delete_confirm_submit($form, &$form_state){
-    $location = $form_state['values']['_location'];
-	$location_name = $form_state['values']['_location_name'];
-	try {
-			if($form_state['values']['confirm']){
-				$location = $form_state['values']['_location'];
-				map_delete_data($location);
-			    drupal_set_message(t('Location "'.$location_name.'"  has been deleted successfully.'));
-	          }
-		}
-	catch (Exception $e){
-	    drupal_set_message(t('Location "'.$location_name.'" could not be deleted. Message = %message, query=%query', 
-	           array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
-	  }
-	
-	drupal_goto("testmap/list"); 
-} */
-
+function delete_location($ajax, $id){
+    //  drupal_add_library('system' , 'drupal.ajax');
+	    ctools_include('ajax');
+       $success = map_delete_data($id);
+       $commands = array();
+       $commands[] = ajax_command_remove("tr.location-row-$id");
+       $commands[] = ajax_command_restripe("table.locations-table");
+       print ajax_render($commands);
+       exit;
+  }
+  
 /**
  * Updates the selected location in the table = 'osmap'. 
  */
@@ -163,8 +128,9 @@ function testmap_form_update_submit($form, &$form_state){
  * creates form for taking in new location details
  */  
 function testmap_form_add($form, &$form_state){
-        return create_form($form, 'add');
- }
+	   return create_form($form, 'add');
+	 }
+
  /**
  * adds new location details to the table = 'osmap'
  */
@@ -185,63 +151,49 @@ function testmap_form_add($form, &$form_state){
           }   
 	   drupal_goto("testmap/list"); 
  }
- 
+  
  /**
  * Displays values of the location in a table. For eg: name, address and type of the location
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationsList_form($form, $form_state){
- drupal_add_library('system' , 'drupal.ajax');
- drupal_add_js('testmap/testmap2.js', 'file');
+ //drupal_add_library('system' , 'drupal.ajax');
+ ctools_include('ajax');
  
- $header = create_table_header();
- $form = array(
-   '#prefix' => '<div id="locationlist">',
-    '#suffix' => '</div>',
-	);
- 
+  $header = create_table_header();
   $rows =array();
+  $output = array();
+  $output .= array(
+    '#type' => 'link',
+	'#title' => 'Add New Location',
+	'#href' => 'testmap/add');
+	
+ 
   $map_data = paging_map_data();
   foreach($map_data as $result) {
-   //$setting = 'id' => $result->id); 
-	// drupal_add_js(array('mymodule' => $settings), 'setting'); 
      $rows[] = array(
-	  '#name' =>$result->name,
-	  '#address' => $result->address,
-	  '#type' => $result->type,
-	  '#delete'=> l(t('Delete'), "testmap/delete/nojs/".$result->id,
-	     array('attributes' => array
-		        ('onClick' => 'if(!confirm("Really Delete?")){return false;}',
-			  //  '#ajax' => array ('effect' => 'fade','progress' => array('type' => 'none'),),	   
-			    
-				), 'query' => drupal_get_destination())),
-	  '#edit' => l(t('Edit'),"testmap/update/".$result->id)
-	  );
-  };
+	   'class' => array('location-row-'. $result->id),
+       'data' => array(
+        $result->name,
+		$result->address,
+		$result->type,
+	    ctools_ajax_text_button("remove", "testmap/delete/nojs/".$result->id, t('Delete this row')),
+		ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, t('Update this row')),
+      ),
+	  ); 
+  }
   
+  
+  
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, array('class' => array('locations-table'))));
+
+  // Show examples of ctools javascript widgets
+ // $output .= '<h2>'. t('CTools Javascript Widgets') .'</h2>';
+
+  return array('markup' => array('#markup' => $output));
     
-  $form['add'] = array(
-  '#type' => 'link',
-  '#title' => 'Add New Location',
-  '#href' => 'testmap/add'
-  );
-  
-  $form['locations'] = array(
-   '#theme' => 'table',
-   '#header' => $header,
-   '#rows' => $rows,
-   '#empty' => t('No locations entered in the table'),
-   '#title' => 'Locations list',
-   '#ajax' => array(
-     'wrapper' => 'locationlist',
-//	 'callback' => 'location_form_list_callback',   
-   ),
-  );
-  
-  return $form;
-}
- 
-   
+ }
+
  /**
  * display the map with all the locations present in the table
  * #markup -> displays a google map in the div
@@ -274,7 +226,6 @@ function mapShow(){
     }	
 	return $build;	  
 }
-
 
 
 
