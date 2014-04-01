@@ -33,12 +33,18 @@ function testmap_menu(){
 	   'page arguments' => array('locationsList_form'),
 	   'access callback' => TRUE,
 	 );
-	 $items['testmap/add'] = array (
+	 $items['testmap/add/nojs'] = array (
 	   'type' => MENU_CALLBACK,
-	   'page callback' => 'drupal_get_form',
-	   'page arguments' => array('testmap_form_add'),
+	   'tite' => 'Locations',
+	   'page callback' => 'add_locations',
+	   'page arguments' => array(2),
 	   'access callback' => TRUE,
+	   'delivery callback' => 'ajax_deliver',
 	 );
+	   $items['testmap/add/ajax'] = array (
+       'delivery callback' => 'ajax_deliver',
+	    ) + $items['testmap/add/nojs'];  
+		
 	 $items['testmap/delete/nojs/%'] = array (
 	   'page callback' => 'delete_location',
 	   'page arguments' => array(2,3),
@@ -60,6 +66,57 @@ function testmap_menu(){
 	 );
 	 
 	return $items;
+}
+
+
+function add_locations($js = NULL) {
+   if (!$js) {
+    return drupal_get_form('add_locations_form');
+  }
+ 
+    ctools_include('ajax');
+    ctools_include('modal');
+ 
+    $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Add Locations'),
+    );
+ 
+    // Use ctools to generate ajax instructions for the browser to create
+    // a form in a modal popup.
+    $output = ctools_modal_form_wrapper('add_locations_form', $form_state);
+ 
+    // If the form has been submitted, there may be additional instructions
+    // such as dismissing the modal popup.
+    if (!empty($form_state['ajax_commands'])) {
+      $output = $form_state['ajax_commands'];
+    }
+    
+	if (!empty($form_state['ajax_commands'])) {
+     $output = $form_state['ajax_commands'];
+    }
+ 
+  if (!empty($form_state['executed'])) {
+
+    // Add the responder javascript, required by ctools
+    ctools_add_js('ajax-responder');
+
+    // Create ajax command array, dismiss the modal window.
+    $output = array();
+    $output[] = ctools_modal_command_dismiss();
+    $output[] = ctools_ajax_command_reload();
+     }
+    // Return the ajax instructions to the browser via ajax_render().
+    print ajax_render($output);
+    exit();
+  }
+  
+ 
+  
+function add_locations_form($form, $form_state) {
+   
+  $form = array();
+  return create_form($form, 'add');
 }
 
 function update_location($ajax, $id){
@@ -128,15 +185,14 @@ function testmap_form_update_submit($form, &$form_state){
  /**
  * creates form for taking in new location details
  */  
-function testmap_form_add($form, &$form_state){
+/* function testmap_form_add($form, &$form_state){
 	   return create_form($form, 'add');
 	 }
-
+ */
  /**
  * adds new location details to the table = 'osmap'
  */
-
- function testmap_form_add_submit($form, &$form_state){
+function add_locations_form_submit($form, &$form_state){
     $lat_lng = get_latitude_longitude($form_state['values']['address']);
 	$mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
 	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
@@ -150,7 +206,7 @@ function testmap_form_add($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
-	   drupal_goto("testmap/list"); 
+	//   drupal_goto("testmap/list"); 
  }
   
  /**
@@ -159,28 +215,34 @@ function testmap_form_add($form, &$form_state){
  */
 function locationsList_form($form, $form_state){
  //drupal_add_library('system' , 'drupal.ajax');
- ctools_include('ajax');
+   ctools_include('ajax');
+   ctools_include('modal');
+   ctools_modal_add_js();
   
-  $header = create_table_header();
+   $links[] = l(t('Add New Location'), 'testmap/add/nojs', 
+   array('attributes' => array('class' => 'ctools-use-modal')));
+  
+   $header = create_table_header();
    $rows =array();
    
    $map_data = paging_map_data();
-  foreach($map_data as $result) {
+   foreach($map_data as $result) {
      $rows[] = array(
 	   'class' => array('location-row' => 'location-row-'. $result->id),
        'data' => array(
         $result->name,
 		$result->address,
 		$result->type,
-	    ctools_ajax_text_button("remove", "testmap/delete/nojs/".$result->id, t('Delete this row')),
+	    ctools_ajax_text_button("delete", "testmap/delete/nojs/".$result->id, t('Delete this row')),
 		ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, t('Update this row')),
 		
 
       ),
 	  ); 
   } 
-   
-  $output =  theme('table', array('header' => $header, 'rows' => $rows, 'class' => 'locations-table'));
+  //theme('links', array('links' => $operations,'attributes' => array('class' => array('links', 'inline')),
+  $output = theme('item_list', array('items' => $links));
+  $output .=  theme('table', array('header' => $header, 'rows' => $rows, 'class' => 'locations-table'));
    $build = array(
     'markup' => array(
 	   '#markup' => $output));
