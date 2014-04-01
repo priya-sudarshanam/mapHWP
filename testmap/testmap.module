@@ -63,17 +63,20 @@ function testmap_menu(){
 	   'page arguments' => array(2,3),
 	   'access callback' => TRUE,
 	   'access arguments' => array('access location id'),
+	   'delivery callback' => 'ajax_deliver',
 	 );
-	 
+	 $items['testmap/update/ajax/%'] = array (
+       'delivery callback' => 'ajax_deliver',
+	    ) + $items['testmap/update/nojs/%'];  
 	return $items;
 }
-
-
+/* Add functions begins 
+************************************************************************************************
+*/
 function add_locations($js = NULL) {
    if (!$js) {
     return drupal_get_form('add_locations_form');
   }
- 
     ctools_include('ajax');
     ctools_include('modal');
  
@@ -82,114 +85,28 @@ function add_locations($js = NULL) {
       'title' => t('Add Locations'),
     );
  
-    // Use ctools to generate ajax instructions for the browser to create
-    // a form in a modal popup.
     $output = ctools_modal_form_wrapper('add_locations_form', $form_state);
- 
-    // If the form has been submitted, there may be additional instructions
-    // such as dismissing the modal popup.
     if (!empty($form_state['ajax_commands'])) {
       $output = $form_state['ajax_commands'];
     }
-    
-	if (!empty($form_state['ajax_commands'])) {
-     $output = $form_state['ajax_commands'];
-    }
- 
+    	
   if (!empty($form_state['executed'])) {
 
-    // Add the responder javascript, required by ctools
     ctools_add_js('ajax-responder');
 
-    // Create ajax command array, dismiss the modal window.
     $output = array();
     $output[] = ctools_modal_command_dismiss();
     $output[] = ctools_ajax_command_reload();
      }
-    // Return the ajax instructions to the browser via ajax_render().
     print ajax_render($output);
     exit();
   }
   
- 
-  
-function add_locations_form($form, $form_state) {
-   
+function add_locations_form($form, $form_state) {   
   $form = array();
   return create_form($form, 'add');
 }
-
-function update_location($ajax, $id){
-   $form = array();
-   return create_form($form, 'update');
-
-}
-
-function delete_location($ajax, $id){
-    //  drupal_add_library('system' , 'drupal.ajax');
-	    ctools_include('ajax');
-	   $success = map_delete_data($id);
-	   $commands = array();
-       $commands[] = ajax_command_remove("tr.location-row-$id");
-       $commands[] = ajax_command_restripe("table.locations-table");
-	   
-       print ajax_render($commands);
-       exit;
-  }
-  
 /**
- * Updates the selected location in the table = 'osmap'. 
- */
-function testmap_form_update($form, &$form_state, $location_id){
-      $mapValue = map_select_data_id($location_id);
-	  $rows = array();
-	  $header = array(t('Name'),t('Address'),t('Type'));
-	  $rows[] = array(
-				  'name' => $mapValue['name'],
-                  'address' => $mapValue['address'],
-			      'type' => $mapValue['type'], 
-                );
-     $form['table'] = array(
-	   '#theme' => 'table',
-	   '#empty' => t('No users found'),
-	   '#header' => $header,
-	   '#rows' => $rows,
-	   '#id' => $location_id,
-	   );
-	  	
-   // $typeOptions = type_list();  
-	
-	return create_form($form, 'update');
-}
-/**
- * update submit form
- */
-function testmap_form_update_submit($form, &$form_state){
-    $updatingId=($form['table']['#id']);
-	  $lat_lng = get_latitude_longitude($form_state['values']['address']);
-    $mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
-	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
-									);
-   try {
-      $count = map_update_data($mapValues, $updatingId);
-      drupal_set_message(t("Updated location @mapValue (@count row updated)", 
-	                     array('@count' => $count, '@mapValue' =>print_r($mapValues['name'], TRUE))));
-	  }
-   catch (Exception $e)
-    {
-       drupal_set_message(t('Failed to update location. Message = %message, query=%query', 
-	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
-      } 
-}
- 
- /**
- * creates form for taking in new location details
- */  
-/* function testmap_form_add($form, &$form_state){
-	   return create_form($form, 'add');
-	 }
- */
- /**
  * adds new location details to the table = 'osmap'
  */
 function add_locations_form_submit($form, &$form_state){
@@ -208,7 +125,91 @@ function add_locations_form_submit($form, &$form_state){
           }   
 	//   drupal_goto("testmap/list"); 
  }
+
+/* Add functions ends 
+************************************************************************************************
+*/
+/* Delete functions starts
+************************************************************************************************
+*/
+function delete_location($ajax, $id){
+    //  drupal_add_library('system' , 'drupal.ajax');
+	    ctools_include('ajax');
+	   $success = map_delete_data($id);
+	   $commands = array();
+       $commands[] = ajax_command_remove("tr.location-row-$id");
+       $commands[] = ajax_command_restripe("table.locations-table");
+	   
+       print ajax_render($commands);
+       exit;
+  }
   
+/* Delete functions ends
+************************************************************************************************
+*/
+/* Update functions starts
+************************************************************************************************
+*/
+
+function update_location($js = NULL, $location_id){
+  if(!$js) {
+   $form = array();
+   return drupal_get_form('update_location_form');
+   }
+   ctools_include('ajax');
+   ctools_include('modal');
+   
+   $form_state = array(
+    'ajax' => TRUE,
+	'title' => 'Update location',
+	'id' => $location_id
+   );
+   $output = ctools_modal_form_wrapper('update_location_form', $form_state);
+   if(!empty($form_state['ajax_commands'])){
+     $output = $form_state['ajax_commands'];
+   }
+   if(!empty($form_state['executed'])){
+    ctools_add_js('ajax-responder');
+	$output[] = ctools_modal_command_dismiss();
+	$output[] = ctools_ajax_command_reload();   
+   }
+   print ajax_render($output);
+   exit();
+}
+function update_location_form($form, $form_state) {   
+  $form = array();
+  return create_form($form, 'update',$location_id);
+}
+
+/**
+ * update submit form
+ */
+function update_location_form_submit($form, &$form_state){
+    $updatingId=($form_state['id']);
+   $lat_lng = get_latitude_longitude($form_state['values']['address']);
+    $mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
+	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
+									);
+   try {
+      $count = map_update_data($mapValues, $updatingId);
+      drupal_set_message(t("Updated location @mapValue (@count row updated)", 
+	                     array('@count' => $count, '@mapValue' =>print_r($mapValues['name'], TRUE))));
+	  }
+   catch (Exception $e)
+    {
+       drupal_set_message(t('Failed to update location. Message = %message, query=%query', 
+	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+      }   
+}
+ 
+ /**
+ * creates form for taking in new location details
+ */  
+/* function testmap_form_add($form, &$form_state){
+	   return create_form($form, 'add');
+	 }
+ */
+   
  /**
  * Displays values of the location in a table. For eg: name, address and type of the location
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
@@ -234,7 +235,8 @@ function locationsList_form($form, $form_state){
 		$result->address,
 		$result->type,
 	    ctools_ajax_text_button("delete", "testmap/delete/nojs/".$result->id, t('Delete this row')),
-		ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, t('Update this row')),
+		l(t('Update'), 'testmap/update/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal')))
+	//	ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, array('attributes' => array('class' => 'ctools-use-modal'))),
 		
 
       ),
