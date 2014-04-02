@@ -132,21 +132,47 @@ function add_locations_form_submit($form, &$form_state){
 /* Delete functions starts
 ************************************************************************************************
 */
-function delete_location($ajax, $id){
-    //  drupal_add_library('system' , 'drupal.ajax');
-	    ctools_include('ajax');
-	   $success = map_delete_data($id);
-	   $commands = array();
-       $commands[] = ajax_command_remove("tr.location-row-$id");
-       $commands[] = ajax_command_restripe("table.locations-table");
-	   
-       print ajax_render($commands);
-       exit;
+function delete_location($js = NULL, $location_id){
+  if(!$js) {
+   $form = array();
+   return drupal_get_form('delete_location_form');
+   }
+   ctools_include('ajax');
+   ctools_include('modal');
+   
+   $form_state = array(
+    'ajax' => TRUE,
+	'title' => 'Delete location',
+	'id' => $location_id
+   );
+   $output = ctools_modal_form_wrapper('delete_location_form', $form_state);
+   if(!empty($form_state['ajax_commands'])){
+     $output = $form_state['ajax_commands'];
+   }
+   if(!empty($form_state['executed'])){
+    ctools_add_js('ajax-responder');
+	$output[] = ctools_modal_command_dismiss();
+	$output[] = ctools_ajax_command_reload();   
+   }
+   print ajax_render($output);
+   exit();
   }
+  
+  function delete_location_form($form, $form_state){
+    return create_delete_form($form, $form_state);
+  }
+  
+ function delete_location_form_submit($form, $form_state){
+   
+     $deleting_id = ($form_state['id']);
+	 $success = map_delete_data($deleting_id);
+    drupal_set_message(t('Successfully deleleted location'));
+ }
   
 /* Delete functions ends
 ************************************************************************************************
 */
+
 /* Update functions starts
 ************************************************************************************************
 */
@@ -201,21 +227,15 @@ function update_location_form_submit($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
       }   
 }
+ /* Update functions ends
+************************************************************************************************
+*/
  
- /**
- * creates form for taking in new location details
- */  
-/* function testmap_form_add($form, &$form_state){
-	   return create_form($form, 'add');
-	 }
- */
-   
  /**
  * Displays values of the location in a table. For eg: name, address and type of the location
  * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
  */
 function locationsList_form($form, $form_state){
- //drupal_add_library('system' , 'drupal.ajax');
    ctools_include('ajax');
    ctools_include('modal');
    ctools_modal_add_js();
@@ -234,7 +254,8 @@ function locationsList_form($form, $form_state){
         $result->name,
 		$result->address,
 		$result->type,
-	    ctools_ajax_text_button("delete", "testmap/delete/nojs/".$result->id, t('Delete this row')),
+	 //   ctools_ajax_text_button("delete", "testmap/delete/nojs/".$result->id, t('Delete this row')),
+		l(t('Delete'), 'testmap/delete/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal'))),
 		l(t('Update'), 'testmap/update/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal')))
 	//	ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, array('attributes' => array('class' => 'ctools-use-modal'))),
 		
