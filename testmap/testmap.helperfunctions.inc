@@ -69,7 +69,9 @@ return $form;
 /**
 * creates a form for adding and updating locations 
 */
-function create_form($form, $form_type, $id){
+function create_form($form, $form_state, $form_type){
+ $values = map_select_data_id($form_state['id']);
+  
  $typeOptions = type_list();
   if ($form_type == 'add'){
     $form[$form_type] = array(
@@ -111,6 +113,32 @@ function create_form($form, $form_type, $id){
 	'#value' => $id  
   );
   
+  if ($form_type == 'update'){
+    $form['existing_values'] = array(
+      '#type' => 'fieldset', //container for multiple fields
+	  '#title' => t('Existing Values'),
+    );
+     $form['existing_values']['name'] = array (
+	   '#type' => 'item',
+	   '#title' => 'Name',
+	   '#markup' =>  $values['name']
+	 );
+	 
+	 $form['existing_values']['address'] = array (
+	   '#type' => 'item',
+	   '#title' => 'Address',
+	   '#markup' =>  $values['address']
+	 );
+	 
+	 $form['existing_values']['type'] = array (
+	   '#type' => 'item',
+	   '#title' => 'Type',
+	   '#markup' =>  $values['type']
+	 );
+  }
+  
+  
+   
    if ($form_type == 'add'){
     $form['submit'] =array (
        '#type' => 'submit',
