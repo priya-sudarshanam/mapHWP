@@ -116,7 +116,7 @@ function add_locations_form_submit($form, &$form_state){
 									);
     try {
 				$returnValue = map_insert_data($mapValues);
-			    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
+	//		    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
 	     }
 		 catch (Exception $e){
                 drupal_set_message(t('Insert of location: "'.$mapValues['name'].'" failed. Message = %message, query=%query', 
@@ -166,7 +166,7 @@ function delete_location($js = NULL, $location_id){
    
      $deleting_id = ($form_state['id']);
 	 $success = map_delete_data($deleting_id);
-    drupal_set_message(t('Successfully deleleted location'));
+  //  drupal_set_message(t('Successfully deleleted location'));
  }
   
 /* Delete functions ends
@@ -204,7 +204,7 @@ function update_location($js = NULL, $location_id){
 }
 function update_location_form($form, $form_state) {   
   $form = array();
-  return create_form($form, 'update',$location_id);
+  return create_form($form, $form_state,'update');
 }
 
 /**
@@ -212,7 +212,7 @@ function update_location_form($form, $form_state) {
  */
 function update_location_form_submit($form, &$form_state){
     $updatingId=($form_state['id']);
-   $lat_lng = get_latitude_longitude($form_state['values']['address']);
+	$lat_lng = get_latitude_longitude($form_state['values']['address']);
     $mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
 	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
 									);
@@ -225,7 +225,7 @@ function update_location_form_submit($form, &$form_state){
     {
        drupal_set_message(t('Failed to update location. Message = %message, query=%query', 
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
-      }   
+      }     
 }
  /* Update functions ends
 ************************************************************************************************
