@@ -133,16 +133,18 @@ function add_locations_form_submit($form, &$form_state){
 ************************************************************************************************
 */
 function delete_location($js = NULL, $location_id){
-  if(!$js) {
+   if(!$js) {
    $form = array();
    return drupal_get_form('delete_location_form');
-   }
-   ctools_include('ajax');
+   } 
+   $locationDetails = map_select_data_id($location_id);
+   //dvm($locationDetails['name']);
+    ctools_include('ajax');
    ctools_include('modal');
    
    $form_state = array(
     'ajax' => TRUE,
-	'title' => 'Delete location',
+	'title' => 'Delete Location:  '.$locationDetails['name'],
 	'id' => $location_id
    );
    $output = ctools_modal_form_wrapper('delete_location_form', $form_state);
@@ -155,7 +157,7 @@ function delete_location($js = NULL, $location_id){
 	$output[] = ctools_ajax_command_reload();   
    }
    print ajax_render($output);
-   exit();
+   exit(); 
   }
   
   function delete_location_form($form, $form_state){
@@ -230,6 +232,55 @@ function update_location_form_submit($form, &$form_state){
  /* Update functions ends
 ************************************************************************************************
 */
+function ajax_button($value=NULL,$id=NULL, $class=NULL) {
+  $form = array();
+ if ($value == 'Add') {
+  $form['url'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array('class' => array('testmap-add-button-url')),
+    '#value' => url('testmap/add/nojs'),
+  );
+   $form['ajax_button'] = array(
+    '#type' => 'button',
+    '#value' => ' '.$value.' new location',
+    '#attributes' => array('class' => array('ctools-use-modal')),
+    '#id' => 'testmap-add-button',
+  );
+  } 
+  elseif ($value == 'Update')
+   {
+    $form['url'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array('class' => array('testmap-update-button-url')),
+    '#value' => url('testmap/update/nojs/'.$id)
+    );
+	
+    $form['ajax_button'] = array(
+    '#type' => 'button',
+    '#value' => $value,
+    '#attributes' => array('class' => array('ctools-use-modal')),
+    '#id' => 'testmap-update-button'
+  );
+   
+   }
+   elseif ($value == 'Delete') {
+    $form['url'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array('class' => array('testmap-delete-button-url')),
+    '#value' => url('testmap/delete/nojs/'.$id)
+  );
+  
+    $form['ajax_button'] = array(
+    '#type' => 'button',
+    '#value' => $value,
+    '#attributes' => array('class' => array('ctools-use-modal')),
+     '#id' => 'testmap-delete-button'
+	 );
+  
+   }
+   
+  return $form;
+}
  
  /**
  * Displays values of the location in a table. For eg: name, address and type of the location
@@ -239,13 +290,12 @@ function locationsList_form($form, $form_state){
    ctools_include('ajax');
    ctools_include('modal');
    ctools_modal_add_js();
-  
-   $links[] = l(t('Add New Location'), 'testmap/add/nojs', 
-   array('attributes' => array('class' => 'ctools-use-modal')));
-  
+   
+   $add_button = ajax_button('Add');
+   $links[] = drupal_render($add_button);
+   
    $header = create_table_header();
    $rows =array();
-   
    $map_data = paging_map_data();
    foreach($map_data as $result) {
      $rows[] = array(
@@ -254,9 +304,9 @@ function locationsList_form($form, $form_state){
         $result->name,
 		$result->address,
 		$result->type,
-	 //   ctools_ajax_text_button("delete", "testmap/delete/nojs/".$result->id, t('Delete this row')),
-		l(t('Delete'), 'testmap/delete/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal'))),
-		l(t('Update'), 'testmap/update/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal')))
+		drupal_render(ajax_button('Delete',$result->id)),
+		drupal_render(ajax_button('Update',$result->id)),
+	//	l(t('Update'), 'testmap/update/nojs/'.$result->id, array('attributes' => array('class' => 'ctools-use-modal')))
 	//	ctools_ajax_text_button("update", "testmap/update/nojs/".$result->id, array('attributes' => array('class' => 'ctools-use-modal'))),
 		
 
