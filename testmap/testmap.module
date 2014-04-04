@@ -3,6 +3,8 @@
 /* requiring files which contain dbfunctions and helper functions */
 require_once('testmap.dbfunctions.inc');
 require_once('testmap.helperfunctions.inc');
+ctools_include('ajax');
+ctools_include('modal');
 
 /* tips
 * print_r formatted version of the array and var_dump but with more detail
@@ -73,23 +75,34 @@ function testmap_menu(){
 /* Add functions begins 
 ************************************************************************************************
 */
-function add_locations($js = NULL) {
-   if (!$js) {
-    return drupal_get_form('add_locations_form');
+function return_modal_form($variable, $name=NULL, $id=NULL){
+ if($variable == 'add'){
+  $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Add Locations'),
+    );
+     $output = ctools_modal_form_wrapper('add_locations_form', $form_state);    
   }
-    ctools_include('ajax');
-    ctools_include('modal');
- 
-    $form_state = array(
+elseif ($variable == 'delete'){
+   $form_state = array(
+    'ajax' => TRUE,
+	'title' => 'Delete Location:  '.$name,
+	'id' => $id
+   );
+   $output = ctools_modal_form_wrapper('delete_location_form', $form_state);
+   }  
+ elseif ($variable == 'update')
+ {
+   $form_state = array(
       'ajax' => TRUE,
       'title' => t('Add Locations'),
     );
  
     $output = ctools_modal_form_wrapper('add_locations_form', $form_state);
-    if (!empty($form_state['ajax_commands'])) {
+   }
+  if (!empty($form_state['ajax_commands'])) {
       $output = $form_state['ajax_commands'];
     }
-    	
   if (!empty($form_state['executed'])) {
 
     ctools_add_js('ajax-responder');
@@ -98,6 +111,13 @@ function add_locations($js = NULL) {
     $output[] = ctools_modal_command_dismiss();
     $output[] = ctools_ajax_command_reload();
      }
+  return $output;
+}
+function add_locations($js = NULL) {
+   if (!$js) {
+    return drupal_get_form('add_locations_form');
+  }
+    $output = return_modal_form("add");
     print ajax_render($output);
     exit();
   }
@@ -123,7 +143,6 @@ function add_locations_form_submit($form, &$form_state){
 	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
 
           }   
-	//   drupal_goto("testmap/list"); 
  }
 
 /* Add functions ends 
@@ -138,37 +157,25 @@ function delete_location($js = NULL, $location_id){
    return drupal_get_form('delete_location_form');
    } 
    $locationDetails = map_select_data_id($location_id);
-   //dvm($locationDetails['name']);
-    ctools_include('ajax');
-   ctools_include('modal');
-   
-   $form_state = array(
-    'ajax' => TRUE,
-	'title' => 'Delete Location:  '.$locationDetails['name'],
-	'id' => $location_id
-   );
-   $output = ctools_modal_form_wrapper('delete_location_form', $form_state);
-   if(!empty($form_state['ajax_commands'])){
-     $output = $form_state['ajax_commands'];
-   }
-   if(!empty($form_state['executed'])){
-    ctools_add_js('ajax-responder');
-	$output[] = ctools_modal_command_dismiss();
-	$output[] = ctools_ajax_command_reload();   
-   }
+   $output = return_modal_form("delete", $locationDetails['name'], $location_id);
    print ajax_render($output);
    exit(); 
   }
   
+ /**
+ * creating the modal delete form
+ */
   function delete_location_form($form, $form_state){
     return create_delete_form($form, $form_state);
   }
-  
+ 
+ /**
+ * submitting the delete location form
+ */
  function delete_location_form_submit($form, $form_state){
    
      $deleting_id = ($form_state['id']);
 	 $success = map_delete_data($deleting_id);
-  //  drupal_set_message(t('Successfully deleleted location'));
  }
   
 /* Delete functions ends
@@ -178,15 +185,15 @@ function delete_location($js = NULL, $location_id){
 /* Update functions starts
 ************************************************************************************************
 */
-
+/**
+ * creating the modal update form
+ */
 function update_location($js = NULL, $location_id){
   if(!$js) {
    $form = array();
    return drupal_get_form('update_location_form');
    }
-   ctools_include('ajax');
-   ctools_include('modal');
-   
+     
    $form_state = array(
     'ajax' => TRUE,
 	'title' => 'Update location',
@@ -204,13 +211,17 @@ function update_location($js = NULL, $location_id){
    print ajax_render($output);
    exit();
 }
+
+/**
+ * creating the update form
+ */
 function update_location_form($form, $form_state) {   
   $form = array();
   return create_form($form, $form_state,'update');
 }
 
 /**
- * update submit form
+ * submitting the update form
  */
 function update_location_form_submit($form, &$form_state){
     $updatingId=($form_state['id']);
@@ -234,34 +245,11 @@ function update_location_form_submit($form, &$form_state){
 */
  /**
  * Displays values of the location in a table. For eg: name, address and type of the location
- * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
+ * $mapValues retrieves the data from 'osmap' table and displays it in table
  */
 function locationsList_form($form, $form_state){
-   ctools_include('ajax');
-   ctools_include('modal');
-   ctools_modal_add_js();
+   $output = create_map_table();
    
-   $add_button = make_button('Add');
-   $links[] = drupal_render($add_button);
-   
-   $header = create_table_header();
-   $rows =array();
-   $map_data = paging_map_data();
-   foreach($map_data as $result) {
-     $rows[] = array(
-	   'class' => array('location-row' => 'location-row-'. $result->id),
-       'data' => array(
-        $result->name,
-		$result->address,
-		$result->type,
-		drupal_render(make_button('Delete',$result->id)),
-		drupal_render(make_button('Update',$result->id)),
-	  ),
-	  ); 
-  } 
-  $output = theme('item_list', array('items' => $links));
-  $output .=  theme('table', array('header' => $header, 'rows' => $rows, 'class' => 'locations-table'));
-  $output .= theme('pager');
    $build = array(
     'markup' => array(
 	   '#markup' => $output));
