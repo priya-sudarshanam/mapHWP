@@ -26,8 +26,8 @@ function get_latitude_longitude($add){
 					array('data' => 'Name',     'field' => 'name', 'sort' => 'asc'),
 					array('data' => 'Address',  'field' => 'address'),
 					array('data' => 'Type', 'field' => 'type', 'sort' => 'asc'),
-					array('data' => 'Delete'),
-					array('data' => 'Edit'),				
+					array('data' => 'Actions', 'colspan' => 2)
+		//			array('data' => 'Edit'),				
 				);
 }
 /**
@@ -194,14 +194,19 @@ function return_map_values($name,$address,$type,$lat,$lng){
    ctools_include('ajax');
    ctools_include('modal');
    ctools_modal_add_js();
-  $output ='';
-  try {
-		$add_button = make_button('Add');
-		$links[] = drupal_render($add_button);
    
-		$header = create_table_header();
-		$rows =array();
-		$map_data = paging_map_data();
+   $delete_image = drupal_get_path('module', 'testmap') . '/th.jpg' ;
+   $update_image = drupal_get_path('module', 'testmap') . '/update.jpg' ;
+   $header = create_table_header(); 
+   $rows =array();
+   $map_data = paging_map_data();
+   $output ='';
+   $add_button = make_button('Add');
+   $links[] = drupal_render($add_button);
+ 
+  try {
+       
+		
 		foreach($map_data as $result) {
 			$rows[] = array(
 			'class' => array('location-row' => 'location-row-'. $result->id),
@@ -209,8 +214,8 @@ function return_map_values($name,$address,$type,$lat,$lng){
 			$result->name,
 			$result->address,
 			$result->type,
-			ctools_ajax_text_button(t('Delete'), 'testmap/delete/nojs/'.$result->id, t('Delete this location')),
-			ctools_ajax_text_button(t('Update'), 'testmap/update/nojs/'.$result->id, t('Update this location')),
+			ctools_modal_image_button($delete_image, 'testmap/delete/nojs/'.$result->id, '', 'ctools-use-modal'),
+			ctools_modal_image_button($update_image, 'testmap/update/nojs/'.$result->id, '', 'ctools-use-modal'),
 				),
 			); 
 		} 
@@ -225,8 +230,7 @@ function return_map_values($name,$address,$type,$lat,$lng){
 	return $output;
  
  } 
-   
- function make_button($value=NULL,$id=NULL, $class=NULL) {
+  function make_button($value=NULL,$id=NULL, $class=NULL) {
   $form = array();
   $form['url'] = array(
     '#type' => 'hidden',
