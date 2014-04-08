@@ -12,13 +12,11 @@
 			 var animation = google.maps.Animation.DROP;
 			 var number = 1;
 			 var customIcons = {
-		         school: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
-			     office: {icon: 'http://labs.google.com/ridefinder/images/mm_20_orange.png'},
-                 museum: {icon: 'http://labs.google.com/ridefinder/images/mm_20_blue.png'},
-                 library: {icon: 'http://labs.google.com/ridefinder/images/mm_20_green.png'},	
-                 university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_yellow.png' },	
-				 shopping: {icon: 'http://labs.google.com/ridefinder/images/mm_20_red.png' },
-				 business: {icon: 'http://labs.google.com/ridefinder/images/mm_20_purple.png' },
+		    	 university:'FF0000',
+                 business:'00CED1' ,
+                 office:'48D1CC' ,
+                 library:'80800' ,
+                 shopping:'8B008B' ,				 
               };
 			 var infoWindow = new google.maps.InfoWindow({
 			        content: content});
@@ -43,7 +41,8 @@
                  var marker = new google.maps.Marker({
 											map: map,
 											position: point,
-											icon: icon.icon,
+								//			icon: icon.icon,
+											icon: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+number+'|'+icon+'|000000' ,
 											animation: animation		                               
                         });
                       bindInfoWindow(marker, map, infoWindow,name,html); 

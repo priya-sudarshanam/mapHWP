@@ -1,0 +1,261 @@
+<?php
+
+/* requiring files which contain dbfunctions and helper functions */
+require_once('testmap.dbfunctions.inc');
+require_once('testmap.helperfunctions.inc');
+
+/* tips
+* print_r formatted version of the array and var_dump but with more detail
+*/
+
+/**
+ * hook_menu for map
+ */	
+function testmap_menu(){
+	
+    $items = array();
+    $items['testmap'] = array(
+        'title' => 'Map',
+        'description' => 'Displays map, enables addition, deletion and updation of locations',
+        'page callback' => 'mapShow', 
+		'access callback' => TRUE,
+		);
+	$items['testmap/map']=array(
+	    'title' => 'Map Display',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'weight' => -10,
+    );	
+     $items['testmap/list'] =array(
+	   'title' => 'Locations List, Delete & Edit',
+	   'type' => MENU_LOCAL_TASK,
+	   'weight' => -9,
+	   'page callback' => 'locationList',
+	   'access callback' => TRUE,
+	 );
+	 $items['testmap/add'] = array (
+	   'title' => 'Add New Location',
+	   'type' => MENU_LOCAL_TASK,
+	   'weight' => -8,
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('testmap_form_add'),
+	   'access callback' => TRUE,
+	 );
+	 $items['testmap/delete/%id'] = array (
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('testmap_delete_confirm', 2),
+	   'access arguments' => array('access location id'),
+	   'access callback' => TRUE,
+	   'type' => MENU_CALLBACK,
+     );
+	 $items['testmap/update/%id'] = array (
+	   'title' => 'Update Location',
+	   'type' => MENU_LOCAL_TASK,
+	   'weight' => -7,
+	   'page callback' => 'drupal_get_form',
+	   'page arguments' => array('testmap_form_update',2),
+	   'access callback' => TRUE,
+	 );
+	 
+	return $items;
+}
+
+function testmap_delete_confirm($form,&$form_state, $location){
+   $form['_location'] = array(
+      '#type' => 'value',
+	  '#value' => $location,   
+   );
+   
+   return confirm_form($form,
+     t('Are you sure you want to delete this location?'),
+	 isset($_GET['destination']) ? $_GET['destination'] : 'testmap/list',
+	 t('This action cannot be undone.'),
+	 t('Delete'),
+	 t('Cancel'));
+}
+
+function testmap_delete_confirm_submit($form, &$form_state){
+    $location = $form_state['values']['_location'];
+	if($form_state['values']['confirm']){
+	     $location = $form_state['values']['_location'];
+		 map_delete_data($location);
+		 drupal_set_message(t('Location has been deleted successfully.'));
+	
+	}
+	drupal_goto("testmap/list"); 
+}
+
+/**
+ * Updates the selected location in the table = 'osmap'. 
+ */
+function testmap_form_update($form, &$form_state, $location_id){
+      $mapValue = map_select_data_id($location_id);
+	  $rows = array();
+	  $header = array(t('Name'),t('Address'),t('Type'));
+	  $rows[] = array(
+				  'name' => $mapValue['name'],
+                  'address' => $mapValue['address'],
+			      'type' => $mapValue['type'], 
+                );
+     $form['table'] = array(
+	   '#theme' => 'table',
+	   '#empty' => t('No users found'),
+	   '#header' => $header,
+	   '#rows' => $rows,
+	   '#id' => $location_id,
+	   );
+	  	
+    $typeOptions = type_list();  
+	return create_form($form, 'update');
+}
+/**
+ * update submit form
+ */
+function testmap_form_update_submit($form, &$form_state){
+    $updatingId=($form['table']['#id']);
+	$lat_lng = get_latitude_longitude($form_state['values']['address']);
+    $mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
+	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
+									);
+   try {
+      $count = map_update_data($mapValues, $updatingId);
+      drupal_set_message(t("Updated location @mapValue (@count row updated)", 
+	                     array('@count' => $count, '@mapValue' =>print_r($mapValues['name'], TRUE))));
+	  }
+   catch (Exception $e)
+    {
+       drupal_set_message(t('Failed to update location. Message = %message, query=%query', 
+	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+      }
+}
+ 
+ /**
+ * creates form for taking in new location details
+ */  
+function testmap_form_add($form, &$form_state){
+    return create_form($form, 'add');
+ }
+ 
+ /**
+ * adds new location details to the table = 'osmap'
+ */
+ function testmap_form_add_submit($form, &$form_state){
+    $lat_lng = get_latitude_longitude($form_state['values']['address']);
+	$mapValues =  return_map_values($form_state['values']['name'], $form_state['values']['address'],
+	                                $form_state['values']['type'], $lat_lng['lat'], $lat_lng['lng']
+									);
+   // if (preg_match('/^[a-zA-Z\s]+$/', $form_state['values']['name']))
+	//{
+	  try {
+				$returnValue = map_insert_data($mapValues);
+			    drupal_set_message(t('Successfully added new location: '.$mapValues['name']));
+	     }
+		 catch (Exception $e){
+                drupal_set_message(t('db_insert failed. Message = %message, query=%query', 
+	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+
+          }   
+	// }
+	/*  else
+	 {
+	   drupal_set_message(t("Name can only contain alpha characters and space"),'error');
+	 }    */    
+ }
+ 
+ /**
+ * Displays values of the location in a table. For eg: name, address and type of the location
+ * $mapValues retrieves the data from 'osmap' table and displays it in drupal table
+ */
+function locationList(){
+  // $mapValues = map_select_data();
+   //return create_map_table($mapValues);
+   $header = array(
+    array('data' => 'Name',        'field' => 'name',               'sort' => 'ASC'),
+    array('data' => 'Address',        'field' => 'address'),
+    array('data' => 'Latitude',     'field' => 'lat'),
+    array('data' => 'Longitude', 'field' => 'lng'),
+	array('data' => 'Type', 'field' => 'type'),
+	array('data' => 'Edit'),
+	array('data' => 'Delete'),
+  );
+
+  # set the database table and initial SelectQuery options
+  # $select is a SelectQuery object.
+  # @see http://api.drupal.org/api/drupal/includes--database--select.inc/class/Se...
+  $select = db_select('osmap')
+              ->extend('PagerDefault')
+              ->extend('TableSort');
+
+  # get the desired fields
+  # orderByHeader is a TableSort method (http://api.drupal.org/api/drupal/includes--tablesort.inc/function/TableS...)
+  $select->fields('osmap', array('id','name', 'address', 'lat', 'lng', 'type'))
+         ->limit(5)
+         ->orderByHeader($header);
+      //   ->orderBy('last_updated', 'DESC');  # TODO this call seems to be losing to orderByHeader on page load
+
+  # execute the query
+  $results = $select->execute();
+
+  # configure the table rows, making the first column a link to our 'edit' page
+  $rows = array();
+  foreach ($results as $row) {
+    $options = array('query' => drupal_get_destination(),);
+    $rows[] = array(
+                       $row->name, 
+					   $row->address,
+					   $row->lat,
+					   $row->lng,
+					   $row->type,
+                       l(t('Delete'), "testmap/delete/".$row->id,$options),
+					   l(t('Edit'), "testmap/update/".$row->id)
+    );
+  }
+
+ // $output = theme('table', array('header' => $header,
+      //                           'rows' => $rows ));
+
+  # add the pager
+//  $output .= theme('pager');
+
+  return $output;
+
+ }
+   
+ /**
+ * display the map with all the locations present in the table
+ * #markup -> displays a google map in the div
+ * #js -> attaches two js files, one external and one internal
+ * $mapValues are sent via settings feature in drupal 7
+ */
+function mapShow(){
+  try {
+ 	 $mapValues = map_select_data();
+     $build = array(
+	  '#markup' => '<div id="googleMap" style="width: 80%; height: 500px;"></div>',
+	  '#attached' => array (
+	     'js' => array (
+		    'https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false' => array('type' => 'external',),
+	        drupal_get_path('module', 'testmap') . '/testmap.js' ,
+			array(
+				'type' => 'setting',
+				'data' => array(
+					'testmap' => $mapValues
+					)
+				)
+			)		
+		),
+     );  
+   }
+  catch (Exception $e)
+    {
+       drupal_set_message(t('Error in displaying map. Message = %message, query=%query', 
+	            array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+    }	
+	return $build;	  
+}
+
+
+
+
+
+
+

@@ -1,0 +1,95 @@
+(function ($) {
+  Drupal.behaviors.map_sample = {
+    attach: function(context,settings) {
+        // Map options.
+		var map;
+		var center;
+		var centerLat=42.373573; //latitude of the center point
+		var centerLng=-71.122887; //longitude of the center point
+		center= new google.maps.LatLng(42.373573,-71.122887);
+		function init(){
+		     //initialize the variables 
+		     var centerLat=42.373573; //latitude of the center point
+			 var centerLng=-71.122887; //longitude of the center point
+			// center= new google.maps.LatLng(42.373573,-71.122887);
+			 var content = 'HWP'; //content displayed when mouseover the center
+			 var zoom = 6; //zoom level can be set higher or lower
+			 var mapTypeId = 'roadmap';
+			 var animation = google.maps.Animation.DROP; //sets the animation of drop where icons 'drop'
+			 var settingArray=Drupal.settings['testmap']; //accessing the settings variable
+			 var settingLen = settingArray.length; //the variable length
+			 
+			 //define different type of icons
+			 var customIcons = {
+			     university: {icon: 'http://labs.google.com/ridefinder/images/mm_20_white.png'},
+                 business: {icon: 'http://labs.google.com/ridefinder/images/mm_20_orange.png'},
+                 office: {icon: 'http://labs.google.com/ridefinder/images/mm_20_blue.png'},	
+              };
+			  
+			 //define the infowindow
+			 var infoWindow = new google.maps.InfoWindow({content: content});
+			 
+			 //define the initial map with center
+     	     var mapProp = {
+					center:center,
+					zoom:zoom,
+					mapTypeId:mapTypeId
+			};
+			
+			//display the map at the specified id in the page
+			 map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+			 
+			 //a marker for the center of the map
+			 var marker = new google.maps.Marker({
+			         position: center, 
+			         map: map,
+					 title: content,
+				
+					 });
+			 
+			 //loop through all the rows in the database
+			 for (var i = 0; i < settingLen; i++) {
+                 var name = settingArray[i]['name'];
+                 var address = settingArray[i]['address'];
+                 var type = settingArray[i]['type'];
+			     var icon = customIcons[settingArray[i]['type']] || {};
+                 var point = new google.maps.LatLng(parseFloat(settingArray[i]['lat']),parseFloat(settingArray[i]['lng']));
+                 var html = "<b>" + name + "</b> <br/>" + address; 
+                 var title = settingArray[i]['title'];
+                 var marker = new google.maps.Marker({
+											map: map,
+											position: point,
+											icon: icon.icon,
+											animation: animation		                               
+                        });
+					  //send the information to open the infowindow on click or mousehover
+                      bindInfoWindow(marker, map, infoWindow,title,html); 
+				 	}
+				}
+				
+              //infowindow opens on click or mousehover
+		      function bindInfoWindow(marker, map, infoWindow, title, html) {
+					google.maps.event.addListener(marker, 'click', function() {
+							infoWindow.setContent(html);
+							infoWindow.open(map, marker);
+					});
+					//displays a different data on mouseover
+					google.maps.event.addListener(marker, 'mouseover', function() {
+						infoWindow.setContent(title);
+						infoWindow.open(map, marker);
+					});
+				}
+
+            
+            //add a listener for loading of the page to display the map
+			google.maps.event.addDomListener(window, 'load', init);
+			google.maps.event.addDomListener(window, 'resize', function() {
+			  //  newcenter=map.getCenter();
+				google.maps.event.trigger(map, 'resize');
+				map.setCenter(center); 
+				
+				});
+		   		
+    }
+  };
+})(jQuery);

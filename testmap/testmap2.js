@@ -1,23 +1,12 @@
 (function ($) {
-  Drupal.behaviors.testmap = {
-    attach: function(context,settings) {
-        // Map options.
-		$("#delete").click(function(){
-           $if(confirm("Do you want to delete?")) {
-            this.click;
-                  alert("Ok");
-              }
-           else
-           {
-               alert("Cancel");
-            }       
-              });
-		
-		
-		
-		
+    Drupal.ajax['#delete'].beforeSerialize = function () {  
 
-    };
+          if(confirm('Are you sure?'))
+              return true;
+          else
+              return false;
 
-  };
-})(jQuery);
+      }
+
+})(jQuery); 
+
