@@ -1,6 +1,7 @@
 <?php
 
-/* requiring files which contain dbfunctions and helper functions */
+/* requiring files which contain dbfunctions and helper functions 
+checking out github once again*/
 require_once('testmap.dbfunctions.inc');
 require_once('testmap.helperfunctions.inc');
 ctools_include('ajax');
