@@ -76,18 +76,18 @@ function create_form($form, $form_state, $form_type){
   
  $typeOptions = type_list();
   if ($form_type == 'add'){
-    $form[$form_type] = array(
+    $form['add'] = array(
       '#type' => 'fieldset', 
-	  '#title' => t('Add new Location'),
+	  '#title' => 'Add new Location',
     );
   }
-  else
+ /* if ($form_type == 'update')
   {
-    $form[$form_type] = array(
+    $form['update'] = array(
     '#type' => 'fieldset', 
 	'#title' => 'Update existing location',
   );
-  }
+  }*/
   
   $form[$form_type]['name'] = array(
     '#type' => 'textfield' ,
@@ -147,12 +147,12 @@ function create_form($form, $form_state, $form_type){
 	   '#value' => 'ADD'
 	   );
 	 }
-	else {
+ /* if ($form_type == 'update') {
 	   $form['submit'] =array (
            '#type' => 'submit',
 	       '#value' => 'UPDATE'
 		   );
-	   } 
+	   } */
 	  
 	 $form['cancel'] = array(
       '#type' => 'button',
@@ -195,8 +195,8 @@ function return_map_values($name,$address,$type,$lat,$lng){
    ctools_include('modal');
    ctools_modal_add_js();
    
-   $delete_image = drupal_get_path('module', 'testmap') . '/th.jpg' ;
-   $update_image = drupal_get_path('module', 'testmap') . '/update.jpg' ;
+   $delete_image = drupal_get_path('module', 'testmap') . '/images/th.jpg' ;
+   $update_image = drupal_get_path('module', 'testmap') . '/images/update.jpg' ;
    $header = create_table_header(); 
    $rows =array();
    $map_data = paging_map_data();
