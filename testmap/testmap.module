@@ -1,7 +1,6 @@
 <?php
 
-/* requiring files which contain dbfunctions and helper functions 
-checking out github once again*/
+/* requiring files which contain dbfunctions and helper functions */
 require_once('testmap.dbfunctions.inc');
 require_once('testmap.helperfunctions.inc');
 ctools_include('ajax');
@@ -28,14 +27,23 @@ function testmap_menu(){
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'weight' => -10,
     );	
-     $items['testmap/list'] =array(
+	 $items['testmap/list'] = array (
 	   'title' => 'Locations List, Add, Delete & Edit',
 	   'type' => MENU_LOCAL_TASK,
 	   'weight' => -9,
-	   'page callback' => 'drupal_get_form',
-	   'page arguments' => array('locationsList_form'),
-	   'access callback' => TRUE,
-	 );
+	   'page callback' => 'locations_list',
+	   'access callback' => TRUE,	
+	); 
+     
+	 $items['testmap/uploadfiles'] = array (
+        'title' => 'Upload Files',
+        'type' => MENU_LOCAL_TASK,
+        'weight' => -8,
+        'page callback' => 'drupal_get_form',
+		'page arguments' => array('upload_file'),
+	    'access callback' => TRUE,
+	);
+	 
 	 $items['testmap/add/nojs'] = array (
 	   'type' => MENU_CALLBACK,
 	   'tite' => 'Locations',
@@ -73,18 +81,117 @@ function testmap_menu(){
 	    ) + $items['testmap/update/nojs/%'];  
 	return $items;
 }
+
+function upload_file($form, &$form_state){
+ $form = array();
+ $form['upload'] = array(
+      '#type' => 'fieldset', 
+	  '#title' => t('Upload Files'),
+    );
+    $form['upload']['file'] = array (
+	   '#type' => 'file',
+	   '#title' => 'File: ',
+	   '#id' => 'file',
+	   '#description' => t('Upload a file, allowed extension: csv'),
+	   '#attributes' => array(
+	    'onChange' => 'var ext=document.getElementById(\'file\').value.split(".").pop();
+                  		if (ext != "csv") {
+						alert("wrong file");
+ 						this.form.reset();
+						return false;} 
+						else {return true;}')
+
+	);
+	  
+	 
+	 $form['upload']['reset'] = array(
+	  '#type' => 'button',
+      '#value' => 'Remove',
+	  '#validate' => array(),
+	  '#attributes' => array(
+	    'onClick' => 'this.form.reset(); return false;')
+	);
+	
+	 $form['upload']['submit'] =array (
+       '#type' => 'submit',
+	   '#value' => 'Upload',);
+
+	 	 
+  return $form;
+}
+
+function upload_file_validate($form, &$form_state){
+         $file = file_save_upload('file', array(
+	            'file_validate_extensions' => array('csv'),
+				FILE_EXISTS_REPLACE));
+	   	
+	      if ($file) {
+		    if($file = file_move($file, 'public://'.$file->filename.'')){
+			    $form_state['upload']['values']['file'] = $file;
+			     }
+			
+		    else 
+			{
+			  drupal_set_message(t('failed to write'). 'error');
+			}
+		 }
+		 else {
+		   drupal_set_message(t('no file was uploaded'), 'error');
+		  }  
+}
+
+  function upload_file_submit($form, &$form_state){
+    $success = 0;
+    $file = $form_state['upload']['values']['file'];
+ //   $file->status = FILE_STATUS_PERMANENT;
+    $txt_file = file_get_contents('public://'.$file->filename.'');
+ 	$data = array();
+	$firstLine = true;
+	foreach(explode("\n", $txt_file) as $line) {
+		if($firstLine) { $firstLine = false; continue; } 
+			$row = explode(',', $line);
+			if ($row[0] !=''){
+				$data[] = array(
+				'name' => $row[0],
+				'address' => str_replace('"', '',$row[1].','.$row[2]),
+				'type' => str_replace('\'','',$row[3])
+			);
+		}
+	}
+	$mapValue =array();
+	foreach($data as $row){
+	  $lat_lng = get_latitude_longitude($row['address']);
+	  $mapValue = array (
+		'name' =>$row['name'],
+		'address' => $row['address'],
+		'lat' => $lat_lng['lat'],
+		'lng' => $lat_lng['lng'],
+		'type' => $row['type']);
+    
+	$success = map_insert_data($mapValue); }
+    if ($success){
+	  unset($form_state['upload']['values']['file']);
+	  file_delete($file);
+	  drupal_set_message(t('worked'));
+	}
+	else
+	{
+	 drupal_set_message(t('did not work'), 'error');
+	}
+	
+  }
 /* Add functions begins 
 ************************************************************************************************
 */
 function return_modal_form($variable, $name=NULL, $id=NULL){
- if($variable == 'add'){
+ if ($variable === 'add'){
   $form_state = array(
       'ajax' => TRUE,
-      'title' => t('Add Locations'),
+      'title' => t('Add Location'),
     );
      $output = ctools_modal_form_wrapper('add_locations_form', $form_state);    
   }
-elseif ($variable == 'delete'){
+if ($variable === 'delete'){
    $form_state = array(
     'ajax' => TRUE,
 	'title' => 'Delete Location:  '.$name,
@@ -92,14 +199,14 @@ elseif ($variable == 'delete'){
    );
    $output = ctools_modal_form_wrapper('delete_location_form', $form_state);
    }  
- elseif ($variable == 'update')
+if ($variable === 'update')
  {
    $form_state = array(
       'ajax' => TRUE,
-      'title' => t('Add Locations'),
+      'title' => t('Update Location'),
     );
  
-    $output = ctools_modal_form_wrapper('add_locations_form', $form_state);
+    $output = ctools_modal_form_wrapper('update_locations_form', $form_state);
    }
   if (!empty($form_state['ajax_commands'])) {
       $output = $form_state['ajax_commands'];
@@ -118,14 +225,14 @@ function add_locations($js = NULL) {
    if (!$js) {
     return drupal_get_form('add_locations_form');
   }
-    $output = return_modal_form("add");
+    $output = return_modal_form('add');
     print ajax_render($output);
     exit();
   }
   
 function add_locations_form($form, $form_state) {   
-  $form = array();
-  return create_form($form, 'add');
+//  $form = array();
+  return create_form($form,$form_state,'add');
 }
 /**
  * adds new location details to the table = 'osmap'
@@ -158,7 +265,7 @@ function delete_location($js = NULL, $location_id){
    return drupal_get_form('delete_location_form');
    } 
    $locationDetails = map_select_data_id($location_id);
-   $output = return_modal_form("delete", $locationDetails['name'], $location_id);
+   $output = return_modal_form('delete', $locationDetails['name'], $location_id);
    print ajax_render($output);
    exit(); 
   }
@@ -248,16 +355,25 @@ function update_location_form_submit($form, &$form_state){
  * Displays values of the location in a table. For eg: name, address and type of the location
  * $mapValues retrieves the data from 'osmap' table and displays it in table
  */
-function locationsList_form($form, $form_state){
-   $output = create_map_table();
-   
-   $build = array(
+function locations_list(){
+  return create_map_table();  
+  }
+ 
+function ajaxed_list($type = 'ajax'){
+  $output = locations_list();
+  if ($type == 'ajax'){
+    $commands = array();
+	$commands[] = ajax_command_html('#locations_list',$output);
+	$response = array('#type' => 'ajax' , '#commands' => $commands);
+	ajax_deliver($response);
+ }
+ else {
+    $build = array(
     'markup' => array(
 	   '#markup' => $output));
-    
-	return $build;
+    return $build;
+    }
  }
-
  /**
  * display the map with all the locations present in the table
  * #markup -> displays a google map in the div
