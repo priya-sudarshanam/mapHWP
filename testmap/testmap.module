@@ -92,14 +92,17 @@ function upload_file($form, &$form_state){
 	   '#type' => 'file',
 	   '#title' => 'File: ',
 	   '#id' => 'file',
-	   '#description' => t('Upload a file, allowed extension: csv'),
+	   '#description' => 'Upload a file, allowed extension: <font color="red"><b>txt</b></font>',
 	   '#attributes' => array(
 	    'onChange' => 'var ext=document.getElementById(\'file\').value.split(".").pop();
-                  		if (ext != "csv") {
+                  		if (ext != "txt") {
 						alert("wrong file");
  						this.form.reset();
-						return false;} 
-						else {return true;}')
+						return false;
+						} 
+						else {
+						     return true;
+						     }'),
 
 	);
 	  
@@ -109,76 +112,95 @@ function upload_file($form, &$form_state){
       '#value' => 'Remove',
 	  '#validate' => array(),
 	  '#attributes' => array(
-	    'onClick' => 'this.form.reset(); return false;')
+	    'onClick' => 'if (document.getElementById(\'file\').value == "")
+		               {alert (\'nothing to remove\');
+					    return false;}
+					   else {
+					     this.form.reset();
+					     return false;
+					   }')
 	);
 	
 	 $form['upload']['submit'] =array (
        '#type' => 'submit',
-	   '#value' => 'Upload',);
+	   '#value' => 'Upload',
+	   '#id' => 'upload',
+	   '#attributes' => array (
+	    'onClick' => 'if (document.getElementById(\'file\').value == "")
+		               {alert (\'Please select a file to upload\');
+					    this.form.reset();
+  					    return false;}
+					   else {
+					     return true;
+					   }')
+	   );
 
 	 	 
   return $form;
 }
 
+
 function upload_file_validate($form, &$form_state){
+   try {
          $file = file_save_upload('file', array(
-	            'file_validate_extensions' => array('csv'),
+	            'file_validate_extensions' => array('txt'),
 				FILE_EXISTS_REPLACE));
 	   	
 	      if ($file) {
 		    if($file = file_move($file, 'public://'.$file->filename.'')){
 			    $form_state['upload']['values']['file'] = $file;
 			     }
-			
-		    else 
-			{
-			  drupal_set_message(t('failed to write'). 'error');
 			}
-		 }
-		 else {
-		   drupal_set_message(t('no file was uploaded'), 'error');
-		  }  
+		}
+	catch(Exception $e){
+		  drupal_set_message(t('Failed to write the file or file was not uploaded. Message = %message, query=%query', 
+	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+		   
+		   }
 }
 
   function upload_file_submit($form, &$form_state){
     $success = 0;
-    $file = $form_state['upload']['values']['file'];
- //   $file->status = FILE_STATUS_PERMANENT;
-    $txt_file = file_get_contents('public://'.$file->filename.'');
- 	$data = array();
+	$data = array();
 	$firstLine = true;
-	foreach(explode("\n", $txt_file) as $line) {
-		if($firstLine) { $firstLine = false; continue; } 
-			$row = explode(',', $line);
-			if ($row[0] !=''){
-				$data[] = array(
-				'name' => $row[0],
-				'address' => str_replace('"', '',$row[1].','.$row[2]),
-				'type' => str_replace('\'','',$row[3])
-			);
-		}
-	}
 	$mapValue =array();
-	foreach($data as $row){
-	  $lat_lng = get_latitude_longitude($row['address']);
-	  $mapValue = array (
-		'name' =>$row['name'],
-		'address' => $row['address'],
-		'lat' => $lat_lng['lat'],
-		'lng' => $lat_lng['lng'],
-		'type' => $row['type']);
-    
-	$success = map_insert_data($mapValue); }
-    if ($success){
-	  unset($form_state['upload']['values']['file']);
-	  file_delete($file);
-	  drupal_set_message(t('worked'));
-	}
-	else
+	try 
 	{
-	 drupal_set_message(t('did not work'), 'error');
-	}
+		$file = $form_state['upload']['values']['file'];
+		$txt_file = file_get_contents('public://'.$file->filename.'');
+ 	
+		foreach(explode("\n", $txt_file) as $line) {
+			if($firstLine) { $firstLine = false; continue; } 
+				$row = explode(',', $line);
+				if ($row[0] !=''){
+					$data[] = array('name' => $row[0], 'address' => str_replace('"', '',$row[1].','.$row[2]), 'type' => str_replace('\'','',$row[3])
+						);
+				}
+			}
 	
+		foreach($data as $row){
+			$lat_lng = get_latitude_longitude($row['address']);
+			$mapValue = array (
+				'name' =>$row['name'],
+				'address' => $row['address'],
+				'lat' => $lat_lng['lat'],
+				'lng' => $lat_lng['lng'],
+				'type' => $row['type']);
+    
+			$success = map_insert_data($mapValue); 
+		}
+		if ($success){
+			unset($form_state['upload']['values']['file']);
+			file_delete($file);
+			drupal_set_message(t('File data successfully added to the database'));
+		}
+		
+		}
+	catch (Exception $e){
+	  drupal_set_message(t('Failed to add data to the table. Message = %message, query=%query', 
+	       array('%message' =>$e->getMessage(),'%query' => $e->query_string)), 'error');
+	 }   
+   
   }
 /* Add functions begins 
 ************************************************************************************************
