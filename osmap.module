@@ -1,0 +1,304 @@
+<?php
+/**
+ * @file
+ * This is an example outlining how a module can make use of the new DBTNG
+ * database API in Drupal 7.
+ *
+ * @todo Demonstrate transaction usage.
+ *
+ * General documentation is available at
+ * @link database Database abstraction layer documentation @endlink and
+ * at @link http://drupal.org/node/310069 @endlink.
+ */
+
+/**
+ * @defgroup dbtng_example Example: Database (DBTNG)
+ * @ingroup examples
+ * @{
+ * Database examples, including DBTNG.
+ *
+ * 'DBTNG' means 'Database: The Next Generation.' Yes, Drupallers are nerds.
+ *
+ * General documentation is available at
+ * @link database.inc database abstraction layer documentation @endlink and
+ * at @link http://drupal.org/node/310069 Database API @endlink.
+ *
+ * The several examples here demonstrate basic database usage.
+ *
+ * In Drupal 6, the recommended method to save or update an entry in the
+ * database was drupal_write_record() or db_query().
+ *
+ * In Drupal 7 and forward, the usage of db_query()
+ * for INSERT, UPDATE, or DELETE is deprecated, because it is
+ * database-dependent. Instead specific functions are provided to perform these
+ * operations: db_insert(), db_update(), and db_delete() do the job now.
+ * (Note that drupal_write_record() is also deprecated.)
+ *
+ * db_insert() example:
+ * @code
+ *   // INSERT INTO {dbtng_example} (name, surname) VALUES('John, 'Doe')
+ *   db_insert('dbtng_example')
+ *     ->fields(array('name' => 'John', 'surname' => 'Doe'))
+ *     ->execute();
+ * @endcode
+ *
+ * db_update() example:
+ * @code
+ *   // UPDATE {dbtng_example} SET name = 'Jane' WHERE name = 'John'
+ *   db_update('dbtng_example')
+ *     ->fields(array('name' => 'Jane'))
+ *     ->condition('name', 'John')
+ *     ->execute();
+ * @endcode
+ *
+ * db_delete() example:
+ * @code
+ *   // DELETE FROM {dbtng_example} WHERE name = 'Jane'
+ *   db_delete('dbtng_example')
+ *     ->condition('name', 'Jane')
+ *     ->execute();
+ * @endcode
+ *
+ * See @link database Database Abstraction Layer @endlink
+ * @see db_insert()
+ * @see db_update()
+ * @see db_delete()
+ * @see drupal_write_record()
+ */
+
+/**
+ * Save an entry in the database.
+ *
+ * The underlying DBTNG function is db_insert().
+ *
+ * In Drupal 6, this would have been:
+ * @code
+ *   db_query(
+ *     "INSERT INTO {dbtng_example} (name, surname, age)
+ *       VALUES ('%s', '%s', '%d')",
+ *     $entry['name'],
+ *     $entry['surname'],
+ *     $entry['age']
+ *   );
+ * @endcode
+ *
+ * Exception handling is shown in this example. It could be simplified
+ * without the try/catch blocks, but since an insert will throw an exception
+ * and terminate your application if the exception is not handled, it is best
+ * to employ try/catch.
+ *
+ * @param $entry
+ *   An array containing all the fields of the database record.
+ *
+ * @see db_insert()
+ */
+/*function dbtng_example_entry_insert($entry) {
+    $return_value = NULL;
+    try {
+        $return_value = db_insert('dbtng_example')
+            ->fields($entry)
+            ->execute();
+    }
+    catch (Exception $e) {
+        drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+            array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+    }
+    return $return_value;
+}*/
+//osmap_insert for inserting values into the osmap table
+
+function osmap_insert($entry) {
+    $return_value = NULL;
+    try {
+        $return_value = db_insert('osmap')
+            ->fields($entry)
+            ->execute();
+    }
+    catch (Exception $e) {
+        drupal_set_message(t('osmap_insert failed. Message = %message, query= %query',
+            array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+    }
+    return $return_value;
+
+/**
+ * Update an entry in the database.
+ *
+ * The former, deprecated techniques used db_query() or drupal_write_record():
+ * @code
+ *  drupal_write_record('dbtng_example', $entry, $entry['pid']);
+ * @endcode
+ *
+ * @code
+ *  db_query(
+ *    "UPDATE {dbtng_example}
+ *     SET name = '%s', surname = '%s', age = '%d'
+ *     WHERE pid = %d",
+ *     $entry['pid']
+ *  );
+ * @endcode
+ *
+ * @param $entry
+ *   An array containing all the fields of the item to be updated.
+ *
+ * @see db_update()
+ */
+/*function dbtng_example_entry_update($entry) {
+    try {
+        // db_update()...->execute() returns the number of rows updated.
+        $count = db_update('dbtng_example')
+            ->fields($entry)
+            ->condition('pid', $entry['pid'])
+            ->execute();
+    }
+    catch (Exception $e) {
+        drupal_set_message(t('db_update failed. Message = %message, query= %query',
+            array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+    }
+    return $count;
+}*/
+//osmap_update for updating values in the osmap table
+    function osmap_update($entry) {
+        try {
+            // db_update()...->execute() returns the number of rows updated.
+            $count = db_update('osmap')
+                ->fields($entry)
+                ->condition('id', $entry['id'])
+                ->execute();
+        }
+        catch (Exception $e) {
+            drupal_set_message(t('osmap_update failed. Message = %message, query= %query',
+                array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+        }
+        return $count;
+    }
+/**
+ * Delete an entry from the database.
+ *
+ * The usage of db_query is deprecated except for static queries.
+ * Formerly, a deletion might have been accomplished like this:
+ * @code
+ *  db_query("DELETE FROM {dbtng_example} WHERE pid = %d", $entry['pid]);
+ * @endcode
+ *
+ * @param $entry
+ *   An array containing at least the person identifier 'pid' element of the
+ *   entry to delete.
+ *
+ * @see db_delete()
+ */
+/*function dbtng_example_entry_delete($entry) {
+    db_delete('dbtng_example')
+        ->condition('pid', $entry['pid'])
+        ->execute();
+
+}*/
+//osmap_delete for deleting values from the osmap table
+  function osmap_delete($entry) {
+        db_delete('osmap')
+            ->condition('id', $entry['id'])
+            ->execute();
+
+    }
+
+/**
+ * Read from the database using a filter array.
+ *
+ * In Drupal 6, the standard function to perform reads was db_query(), and
+ * for static queries, it still is.
+ *
+ * db_query() used an SQL query with placeholders and arguments as parameters.
+ *
+ * @code
+ *  // Old way
+ *  $query = "SELECT * FROM {dbtng_example} n WHERE n.uid = %d AND name = '%s'";
+ *  $result = db_query($query, $uid, $name);
+ * @endcode
+ *
+ * Drupal 7 DBTNG provides an abstracted interface that will work with a wide
+ * variety of database engines.
+ *
+ * db_query() is deprecated except when doing a static query. The following is
+ * perfectly acceptable in Drupal 7. See
+ * @link http://drupal.org/node/310072 the handbook page on static queries @endlink
+ *
+ * @code
+ *   // SELECT * FROM {dbtng_example} WHERE uid = 0 AND name = 'John'
+ *   db_query(
+ *     "SELECT * FROM {dbtng_example} WHERE uid = :uid and name = :name",
+ *     array(':uid' => 0, ':name' => 'John')
+ *   )->execute();
+ * @endcode
+ *
+ * But for more dynamic queries, Drupal provides the db_select()
+ * API method, so there are several ways to perform the same SQL query.
+ * See the @link http://drupal.org/node/310075 handbook page on dynamic queries. @endlink
+ *
+ * @code
+ *   // SELECT * FROM {dbtng_example} WHERE uid = 0 AND name = 'John'
+ *   db_select('dbtng_example')
+ *     ->fields('dbtng_example')
+ *     ->condition('uid', 0)
+ *     ->condition('name', 'John')
+ *     ->execute();
+ * @endcode
+ *
+ * Here is db_select with named placeholders:
+ * @code
+ *   // SELECT * FROM {dbtng_example} WHERE uid = 0 AND name = 'John'
+ *   $arguments = array(':name' => 'John', ':uid' => 0);
+ *   db_select('dbtng_example')
+ *     ->fields('dbtng_example')
+ *     ->where('uid = :uid AND name = :name', $arguments)
+ *     ->execute();
+ * @endcode
+ *
+ * Conditions are stacked and evaluated as AND and OR depending on the type of
+ * query. For more information, read the conditional queries handbook page at:
+ * http://drupal.org/node/310086
+ *
+ * The condition argument is an 'equal' evaluation by default, but this can be
+ * altered:
+ * @code
+ *   // SELECT * FROM {dbtng_example} WHERE age > 18
+ *   db_select('dbtng_example')
+ *     ->fields('dbtng_example')
+ *     ->condition('age', 18, '>')
+ *     ->execute();
+ * @endcode
+ *
+ * @param $entry
+ *   An array containing all the fields used to search the entries in the table.
+ * @return
+ *   An object containing the loaded entries if found.
+ *
+ * @see db_select()
+ * @see db_query()
+ * @see http://drupal.org/node/310072
+ * @see http://drupal.org/node/310075
+ *
+ */
+/*function dbtng_example_entry_load($entry = array()) {
+    // Read all fields from the dbtng_example table.
+    $select = db_select('dbtng_example', 'example');
+    $select->fields('example');
+
+    // Add each field and value as a condition to this query.
+    foreach ($entry as $field => $value) {
+        $select->condition($field, $value);
+    }
+    // Return the result in object format.
+    return $select->execute()->fetchAll();
+}*/
+//osmap_entry_load loads the data from the osmap table
+function osmap_entry_load($entry = array()) {
+        // Read all fields from the osmap table.
+        $select = db_select('osmap', 'os');
+        $select->fields('os');
+
+        // Add each field and value as a condition to this query.
+        foreach ($entry as $field => $value) {
+            $select->condition($field, $value);
+        }
+        // Return the result in object format.
+        return $select->execute()->fetchAll();
+    }
